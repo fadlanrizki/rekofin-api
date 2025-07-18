@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
-import prisma from '../prisma/client';
+import { Request, Response } from "express";
+import { prismaClient } from "../application/database";
 
 export const getUsers = async (req: Request, res: Response) => {
-  const users = await prisma.user.findMany();
+  const users = await prismaClient.user.findMany();
   res.json(users);
 };

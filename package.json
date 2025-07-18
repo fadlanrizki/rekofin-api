@@ -2,32 +2,44 @@
   "name": "rekofin",
   "version": "1.0.0",
   "description": "Backend Rekofin",
+  "scripts": {
+    "test": "jest",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.[t|j]sx?$": "babel-jest"
+    }
+  },
   "dependencies": {
+    "@prisma/client": "^6.12.0",
     "body-parser": "^1.20.2",
     "cors": "2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
-    "prisma": "^6.10.1",
     "swagger-autogen": "2.23.7",
     "swagger-ui-express": "4.6.3",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.2",
-    "yup": "^1.4.0",
-    "@prisma/client": "^6.10.1"
+    "winston": "^3.17.0",
+    "yup": "^1.4.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.28.0",
+    "@babel/preset-typescript": "^7.27.1",
+    "@jest/globals": "^30.0.4",
     "@types/body-parser": "^1.19.5",
     "@types/cors": "2.8.17",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.0",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^24.0.7",
-    "@types/swagger-ui-express": "4.1.6"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts"
+    "@types/swagger-ui-express": "4.1.6",
+    "babel-jest": "^30.0.4",
+    "jest": "^30.0.4",
+    "prisma": "^6.12.0"
   },
   "author": "fadlan rizki",
   "license": "ISC"
