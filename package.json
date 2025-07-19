@@ -23,7 +23,8 @@
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.2",
     "winston": "^3.17.0",
-    "yup": "^1.4.0"
+    "yup": "^1.4.0",
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.0",
