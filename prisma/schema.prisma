@@ -15,76 +15,110 @@ datasource db {
 }
 
 model User {
-  userId     Int    @id @default(autoincrement())
-  username   String @unique
-  password   String
-  role       Role
-  fullName   String
-  email      String @unique
-  occupation String
+  id              Int              @id @default(autoincrement())
+  username        String           @unique
+  fullName        String
+  email           String           @unique
+  password        String
+  role            Role
+  financialInputs FinancialInput[]
+  histories       History[]
 
-  financialFacts        FinancialFact[]
-  recommendationHistory RecommendationHistory[]
-  rules                 Rule[]                  @relation("CreatedRules")
+  @@map("user")
 }
 
-model FinancialFact {
-  factId          Int @id @default(autoincrement())
-  userId          Int
-  income          Int
-  savings         Int
-  emergencyFund   Int
-  investment      Int
-  debt            Int
-  monthlyExpenses Int
+model FinancialInput {
+  id                 Int                @id @default(autoincrement())
+  user               User               @relation(fields: [userId], references: [id])
+  userId             Int
+  monthlyIncome      Float
+  totalSavings       Float
+  emergencyFund      Float
+  debt               Float
+  monthlyExpenses    Float
+  riskProfile        RiskProfile
+  financialPrinciple FinancialPrinciple
+  createdAt          DateTime           @default(now())
+  histories          History[]
 
-  createdAt DateTime
-
-  user User @relation(fields: [userId], references: [userId])
-}
-
-model RecommendationCategory {
-  categoryId   Int    @id @default(autoincrement())
-  categoryName String
-  description  String
-
-  recommendations Recommendation[]
-  rules           Rule[]
-}
-
-model Recommendation {
-  recomendationId Int    @id @default(autoincrement())
-  categoryId      Int
-  title           String
-  description     String
-  source          String
-
-  category RecommendationCategory  @relation(fields: [categoryId], references: [categoryId])
-  history  RecommendationHistory[]
-}
-
-model RecommendationHistory {
-  historyId       Int      @id @default(autoincrement())
-  userId          Int
-  recomendationId Int
-  createdAt       DateTime @default(now())
-
-  user           User           @relation(fields: [userId], references: [userId])
-  recommendation Recommendation @relation(fields: [recomendationId], references: [recomendationId])
+  @@map("financial_input")
 }
 
 model Rule {
-  ruleId     Int    @id @default(autoincrement())
-  categoryId Int
-  condition  String
-  conclusion String
-  createdBy  Int
+  id             Int                    @id @default(autoincrement())
+  name           String
+  conditions     Json
+  categoryResult RecommendationCategory
+  description    String
+  active         Boolean                @default(true)
+  createdAt      DateTime               @default(now())
 
-  category RecommendationCategory @relation(fields: [categoryId], references: [categoryId])
-  author   User                   @relation("CreatedRules", fields: [createdBy], references: [userId])
+  @@map("rule")
+}
+
+model Recommendation {
+  id         Int                     @id @default(autoincrement())
+  category   RecommendationCategory
+  content    String
+  sourceType SourceType
+  sourceName String
+  author     String
+  histories  HistoryRecommendation[]
+
+  @@map("recommendation")
+}
+
+model History {
+  id               Int                     @id @default(autoincrement())
+  user             User                    @relation(fields: [userId], references: [id])
+  userId           Int
+  financialInput   FinancialInput          @relation(fields: [financialInputId], references: [id])
+  financialInputId Int
+  categoryResult   RecommendationCategory
+  createdAt        DateTime                @default(now())
+  recommendations  HistoryRecommendation[]
+
+  @@map("history")
+}
+
+model HistoryRecommendation {
+  id               Int      @id @default(autoincrement())
+  recommendationId Int
+  historyId        Int
+  createdAt        DateTime @default(now())
+
+  recommendation Recommendation @relation(fields: [recommendationId], references: [id])
+  history        History        @relation(fields: [historyId], references: [id])
+
+  @@unique([recommendationId, historyId])
+  @@map("history_recommendation")
 }
 
 enum Role {
   admin
-  employee
+  user
+}
+
+enum RiskProfile {
+  conservative
+  moderate
+  aggressive
+}
+
+enum FinancialPrinciple {
+  syariah
+  conventional
+  both
+}
+
+enum RecommendationCategory {
+  menabung
+  dana_darurat
+  investasi
+}
+
+enum SourceType {
+  book
+  educational
+  influencer
 }
