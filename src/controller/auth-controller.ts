@@ -9,6 +9,7 @@ export class AuthController {
         req.body as CreateUserRequest;
       const response = await AuthService.register(registerRequest);
       res.status(200).json({
+        ok: true,
         data: response,
         message: "Berhasil mendaftar"
       });
@@ -31,4 +32,3 @@ export class AuthController {
     }
   }
 }
- 

@@ -15,9 +15,43 @@ export type CreateUserRequest = {
   role?: string;
 };
 
+export type AddUserRequest = {
+  username: string;
+  fullName: string;
+  email: string;
+  password: string;
+  role: string;
+}
+export type UpdateUserRequest = {
+  id: number;
+  fullName: string;
+  password: string;
+}
+
+export type AddUserResponse = {
+  id?: string;
+  fullName: string;
+}
+
+export type UpdateUserResponse = {
+  id: number;
+  fullName: string
+}
+
 export type LoginUserRequest = {
     username: string;
     password: string;
+}
+
+type UserListItem = {
+  id: number;
+  fullName: string;
+  email: string;
+  role: string;
+}
+
+export type getUsersResponse = {
+  list: UserListItem[]
 }
 
 export function getRoleUser() {
