@@ -21,6 +21,8 @@ model User {
   email           String           @unique
   password        String
   role            Role
+  occupation      String?
+  gender          Gender?
   financialInputs FinancialInput[]
   histories       History[]
 
@@ -59,10 +61,11 @@ model Rule {
 model Recommendation {
   id         Int                     @id @default(autoincrement())
   category   RecommendationCategory
-  content    String
+  content    String                  @db.Text
   sourceType SourceType
   sourceName String
   author     String
+  title      String
   histories  HistoryRecommendation[]
 
   @@map("recommendation")
@@ -97,6 +100,11 @@ model HistoryRecommendation {
 enum Role {
   admin
   user
+}
+
+enum Gender {
+  pria
+  wanita
 }
 
 enum RiskProfile {
