@@ -1,6 +1,11 @@
 import z, { ZodType } from "zod";
 
 export class UserValidation {
+  static readonly LOGIN: ZodType = z.object({
+    credential: z.string().min(1, "Username Required"),
+    password: z.string().min(1, "Password Required")
+  })
+
   static readonly CREATE: ZodType = z.object({
     username: z.string().min(1),
     fullName: z.string().min(1),

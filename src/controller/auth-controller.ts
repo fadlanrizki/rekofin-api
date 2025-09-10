@@ -1,31 +1,30 @@
 import { Request, Response, NextFunction } from "express";
-import { CreateUserRequest, LoginUserRequest } from "../model/user-model";
+import { TLoginUser, TRegisterUser } from "../model/user-model";
 import { AuthService } from "../service/auth-service";
 
 export class AuthController {
-  static async register(req: Request, res: Response, next: NextFunction) {
+  static async login(req: Request, res: Response, next: NextFunction) {
     try {
-      const registerRequest: CreateUserRequest =
-        req.body as CreateUserRequest;
-      const response = await AuthService.register(registerRequest);
+      const request = req.body as unknown as TLoginUser;
+      const response = await AuthService.login(request);
       res.status(200).json({
         ok: true,
         data: response,
-        message: "Berhasil mendaftar"
+        message: "Berhasil Login",
       });
     } catch (error) {
       next(error);
     }
   }
 
-  static async login(req: Request, res: Response, next: NextFunction) {
+  static async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const loginRequest: LoginUserRequest =
-        req.body as LoginUserRequest;
-      const response = await AuthService.login(loginRequest);
+      const request = req.body as unknown as TRegisterUser;
+      const response = await AuthService.register(request);
       res.status(200).json({
+        ok: true,
         data: response,
-        message: "Berhasil Login"
+        message: "Berhasil mendaftar",
       });
     } catch (error) {
       next(error);
