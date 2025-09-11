@@ -6,16 +6,16 @@ interface AuthRequest extends Request {
   user?: string | JwtPayload;
 }
 
-function authenticateToken(
+export function authenticateToken(
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) {
   const authHeader = req.headers["authorization"];
-  const token = authHeader?.split(" ")[1];
+  const token = authHeader?.split(" ")[1] || "";  
 
   if (!token) {
-    return res.status(403).json({
+    res.status(403).json({
       ok: false,
       data: null,
       message: "Access Token Required",
@@ -27,7 +27,7 @@ function authenticateToken(
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(403).json({
+    res.status(403).json({
       ok: false,
       data: null,
       message: "Invalid or expired token",

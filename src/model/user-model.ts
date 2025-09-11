@@ -16,6 +16,8 @@ export type TRegisterUser = Omit<
   "id" | "role" | "occupation" | "gender"
 >;
 
+export type TCreateUser = Omit<TUser, "id" | "password">
+
 export type TLoginUser = {
   credential: string;
   password: string;

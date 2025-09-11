@@ -1,11 +1,11 @@
-import { TRegisterUser } from "../model/user-model";
 import { Request, Response, NextFunction } from "express";
 import { UserService } from "../service/user-service";
+import { TCreateUser } from "../model/user-model";
 
 export class UserController {
   static async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const request = req.body as unknown as TRegisterUser;
+      const request = req.body as unknown as TCreateUser;
       const response = await UserService.create(request);
       res.status(200).json({
         ok: true,
