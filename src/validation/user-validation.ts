@@ -10,9 +10,15 @@ export class UserValidation {
     role: z.string().min(1),
     
   });
-
-  static readonly UPDATE: ZodType = z.object({
-    fullName: z.string().min(1),
-    password: z.string().min(1),
+  
+  static readonly LIST: ZodType = z.object({
+    search: z.string().optional(),
+    filter: z.object({
+      role: z.string().optional()
+    }),
+    limit: z.string().optional(),
+    page: z.string().optional()
   });
+
+  
 }

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { UserService } from "../service/user-service";
-import { TCreateUser } from "../model/user-model";
+import { TCreateUser, TParamUser } from "../model/user-model";
 
 export class UserController {
   static async create(req: Request, res: Response, next: NextFunction) {
@@ -11,6 +11,20 @@ export class UserController {
         ok: true,
         data: response,
         message: "Berhasil Menambahkan User",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  static async getList(req: Request, res: Response, next: NextFunction) {
+    try {
+      const request = req?.query as unknown as TParamUser;
+      
+      const response = await UserService.getList(request);
+      res.status(200).json({
+        ok: true,
+        ...response,
+        message: "Berhasil Get List User",
       });
     } catch (error) {
       next(error);

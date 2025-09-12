@@ -1,55 +1,16 @@
-/*
-  Warnings:
-
-  - You are about to drop the `FinancialInput` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `History` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `HistoryRecommendation` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `Recommendation` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `Rule` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `User` table. If the table is not empty, all the data it contains will be lost.
-
-*/
--- DropForeignKey
-ALTER TABLE `FinancialInput` DROP FOREIGN KEY `FinancialInput_userId_fkey`;
-
--- DropForeignKey
-ALTER TABLE `History` DROP FOREIGN KEY `History_financialInputId_fkey`;
-
--- DropForeignKey
-ALTER TABLE `History` DROP FOREIGN KEY `History_userId_fkey`;
-
--- DropForeignKey
-ALTER TABLE `HistoryRecommendation` DROP FOREIGN KEY `HistoryRecommendation_historyId_fkey`;
-
--- DropForeignKey
-ALTER TABLE `HistoryRecommendation` DROP FOREIGN KEY `HistoryRecommendation_recommendationId_fkey`;
-
--- DropTable
-DROP TABLE `FinancialInput`;
-
--- DropTable
-DROP TABLE `History`;
-
--- DropTable
-DROP TABLE `HistoryRecommendation`;
-
--- DropTable
-DROP TABLE `Recommendation`;
-
--- DropTable
-DROP TABLE `Rule`;
-
--- DropTable
-DROP TABLE `User`;
-
 -- CreateTable
 CREATE TABLE `user` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
+    `username` VARCHAR(191) NOT NULL,
+    `fullName` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
     `password` VARCHAR(191) NOT NULL,
     `role` ENUM('admin', 'user') NOT NULL,
+    `occupation` VARCHAR(191) NULL,
+    `gender` ENUM('pria', 'wanita') NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
+    UNIQUE INDEX `user_username_key`(`username`),
     UNIQUE INDEX `user_email_key`(`email`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -87,10 +48,11 @@ CREATE TABLE `rule` (
 CREATE TABLE `recommendation` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `category` ENUM('menabung', 'dana_darurat', 'investasi') NOT NULL,
-    `content` VARCHAR(191) NOT NULL,
+    `content` TEXT NOT NULL,
     `sourceType` ENUM('book', 'educational', 'influencer') NOT NULL,
     `sourceName` VARCHAR(191) NOT NULL,
     `author` VARCHAR(191) NOT NULL,
+    `title` VARCHAR(191) NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

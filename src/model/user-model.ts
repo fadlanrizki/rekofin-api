@@ -18,6 +18,17 @@ export type TRegisterUser = Omit<
 
 export type TCreateUser = Omit<TUser, "id" | "password">
 
+export type FilterUser = {
+  role: "all" | "admin" | "employee"
+}
+
+export type TParamUser = {
+  search: string;
+  filter: FilterUser;
+  limit: string;
+  page: string;
+}
+
 export type TLoginUser = {
   credential: string;
   password: string;

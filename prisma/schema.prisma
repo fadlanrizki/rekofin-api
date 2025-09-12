@@ -23,6 +23,7 @@ model User {
   role            Role
   occupation      String?
   gender          Gender?
+  createdAt       DateTime           @default(now())
   financialInputs FinancialInput[]
   histories       History[]
 
