@@ -97,9 +97,39 @@ export class UserService {
     const response = {
       data,
       total,
-      page
-    }
+      page,
+    };
 
     return response;
   }
+
+  static delete = async (id: string): Promise<any> => {
+    const selectedId = parseInt(id);
+
+    return await prismaClient.user.delete({
+      where: {
+        id: selectedId,
+      },
+      select: {
+        fullName: true,
+      },
+    });
+  };
+
+  static findUserByID = async (id: string): Promise<any> => {
+    const selectedId = parseInt(id);
+
+    return await prismaClient.user.findUnique({
+      where: {
+        id: selectedId,
+      },
+      select: {
+        fullName: true,
+        username: true,
+        email: true,
+        role: true,
+        gender: true,
+      },
+    });
+  };
 }
