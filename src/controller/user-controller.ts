@@ -46,10 +46,10 @@ export class UserController {
   static async findById(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params?.id;
-      const response = await UserService.findUserByID(id);
+      const data = await UserService.findUserByID(id);
       res.status(200).json({
         ok: true,
-        data: response.data,
+        data,
         message: `Berhasil Get data user`,
       });
     } catch (error) {
