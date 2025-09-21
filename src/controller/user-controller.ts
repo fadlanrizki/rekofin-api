@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { UserService } from "../service/user-service";
-import { TCreateUser, TParamUser } from "../model/user-model";
+import { TCreateUser, TParamUser, TUpdateUser } from "../model/user-model";
 
 export class UserController {
   static async create(req: Request, res: Response, next: NextFunction) {
@@ -16,6 +16,7 @@ export class UserController {
       next(error);
     }
   }
+
   static async getList(req: Request, res: Response, next: NextFunction) {
     try {
       const request = req?.query as unknown as TParamUser;
@@ -30,6 +31,7 @@ export class UserController {
       next(error);
     }
   }
+
   static async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params?.id;
@@ -43,6 +45,7 @@ export class UserController {
       next(error);
     }
   }
+
   static async findById(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params?.id;
@@ -56,4 +59,18 @@ export class UserController {
       next(error);
     }
   }
+
+  // static async update(req: Request, res: Response, next: NextFunction) {
+  //   try {
+  //     const request = req.body as unknown as TUpdateUser;
+  //     const response = await UserService.update(request);
+  //     res.status(200).json({
+  //       ok: true,
+  //       data: response,
+  //       message: "Berhasil Edit data User",
+  //     });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // }
 }
