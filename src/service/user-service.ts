@@ -1,4 +1,4 @@
-import { UserValidation } from "./../validation/user-validation";
+import { UserValidation } from "../validation/user-validation";
 import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
 import {
@@ -96,13 +96,11 @@ export class UserService {
 
     const total = await prismaClient.user.count();
 
-    const response = {
+    return {
       data,
       total,
       page,
     };
-
-    return response;
   }
 
   static delete = async (id: string): Promise<any> => {

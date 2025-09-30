@@ -68,6 +68,8 @@ model Recommendation {
   author     String
   title      String
   histories  HistoryRecommendation[]
+  createdAt  DateTime               @default(now())
+
 
   @@map("recommendation")
 }
