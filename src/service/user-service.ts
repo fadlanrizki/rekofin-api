@@ -103,16 +103,13 @@ export class UserService {
     };
   }
 
-  static delete = async (id: string): Promise<any> => {
+  static async delete(id: string): Promise<any> {
     const selectedId = parseInt(id);
 
     return await prismaClient.user.delete({
       where: {
         id: selectedId,
-      },
-      select: {
-        fullName: true,
-      },
+      }
     });
   };
 

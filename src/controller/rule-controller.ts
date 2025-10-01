@@ -39,7 +39,7 @@ export class RuleController {
       res.status(200).json({
         ok: true,
         data: response.data,
-        message: `Berhasil Delete Rule ${response.data.id}`,
+        message: `Berhasil Delete Rule`,
       });
     } catch (error) {
       next(error);
