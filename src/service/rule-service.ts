@@ -8,7 +8,10 @@ export class RuleService {
 
     return await prismaClient.rule.create({
       data: {
-        ...validRequest,
+        name: validRequest.name,
+        conditions: validRequest.conditions,
+        active: validRequest.active,
+        description: validRequest.description,
         categoryResult: validRequest.categoryResult as RecommendationCategory,
       },
     });
@@ -24,7 +27,10 @@ export class RuleService {
 
     const searchCondition = search
       ? {
-          OR: [{ name: { contains: search } }],
+          OR: [
+            { name: { contains: search } },
+            { description: { contains: search } },
+          ],
         }
       : {};
 
@@ -41,12 +47,16 @@ export class RuleService {
       },
     });
 
-    const total = await prismaClient.user.count();
+    const total = await prismaClient.rule.count({
+      where: {
+        AND: [searchCondition, categoryResultCondition],
+      },
+    });
 
     return {
       data,
       total,
-      page
+      page,
     };
   }
   static async delete(id: string): Promise<any> {
