@@ -26,7 +26,7 @@ export class RecommendationController {
       const response = await RecommendationService.getList(request);
       res.status(200).json({
         ok: true,
-        data: response,
+        ...response,
         message: "Berhasil mendapatkan daftar Rekomendasi",
       });
     } catch (error) {
