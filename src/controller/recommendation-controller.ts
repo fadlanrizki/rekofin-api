@@ -3,6 +3,7 @@ import { RecommendationService } from "../service/recommendation-service";
 import {
   TAddRecommendation,
   TParamRecommendation,
+  TUpdateRecommendation,
 } from "../model/recommendation-model";
 
 export class RecommendationController {
@@ -14,6 +15,20 @@ export class RecommendationController {
         ok: true,
         data: response,
         message: "Berhasil Menambahkan Rekomendasi",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const request = req.body as unknown as TUpdateRecommendation;
+      const response = await RecommendationService.update(request);
+      res.status(200).json({
+        ok: true,
+        data: response,
+        message: "Berhasil Memperbarui data Rekomendasi",
       });
     } catch (error) {
       next(error);

@@ -9,7 +9,7 @@ export type TRecommendation = {
 };
 
 export type TAddRecommendation = Omit<TRecommendation, "id">;
-export type TUpdateRecommendation = Partial<TAddRecommendation>;
+export type TUpdateRecommendation = Partial<TRecommendation>;
 
 type FilterRecommendation = {
   category: "all" | "menabung" | "dana_darurat" | "investasi";

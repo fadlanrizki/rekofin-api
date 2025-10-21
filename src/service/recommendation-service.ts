@@ -2,6 +2,7 @@ import { prismaClient } from "../application/database";
 import {
   TAddRecommendation,
   TParamRecommendation,
+  TUpdateRecommendation,
 } from "../model/recommendation-model";
 import { RecommendationCategory, SourceType } from "../generated/prisma";
 import { ResponseError } from "../error/response-error";
@@ -12,6 +13,19 @@ export class RecommendationService {
 
     return prismaClient.recommendation.create({
       data: { ...registerRequest },
+    });
+  }
+
+  static async update(request: TUpdateRecommendation): Promise<any> {
+    const updateRequest = request as unknown as TUpdateRecommendation;
+
+    return prismaClient.recommendation.update({
+      data: {
+        ...updateRequest,
+      },
+      where: {
+        id: updateRequest.id,
+      },
     });
   }
 

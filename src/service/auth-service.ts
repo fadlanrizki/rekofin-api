@@ -53,7 +53,7 @@ export class AuthService {
 
     const token = jwt.sign(selectedUser, SECRET_KEY, {
       algorithm: "HS256",
-      expiresIn: "1h",
+      expiresIn: "3h",
     });
 
     const response = {
