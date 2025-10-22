@@ -36,7 +36,7 @@ export class UserController {
     try {
       const id = req.params?.id;
       const response = await UserService.delete(id);
-      
+
       res.status(200).json({
         ok: true,
         data: response.data,
@@ -61,17 +61,17 @@ export class UserController {
     }
   }
 
-  // static async update(req: Request, res: Response, next: NextFunction) {
-  //   try {
-  //     const request = req.body as unknown as TUpdateUser;
-  //     const response = await UserService.update(request);
-  //     res.status(200).json({
-  //       ok: true,
-  //       data: response,
-  //       message: "Berhasil Edit data User",
-  //     });
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // }
+  static async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const request = req.body as unknown as TUpdateUser;
+      const response = await UserService.update(request);
+      res.status(200).json({
+        ok: true,
+        data: response,
+        message: "Berhasil Edit data User",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

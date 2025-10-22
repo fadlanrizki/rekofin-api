@@ -9,6 +9,7 @@ export class UserValidation {
     role: z.string().min(1),
   });
   static readonly UPDATE: ZodType = z.object({
+    id: z.number("ID tidak ditemukan"),
     username: z.string().optional(),
     fullName: z.string().optional(),
     email: z.email("This is not valid email").optional(),

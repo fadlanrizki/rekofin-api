@@ -1,7 +1,7 @@
 import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
 import { RecommendationCategory } from "../generated/prisma";
-import { TAddRule, TParamRule } from "../model/rule-model";
+import { TAddRule, TEditRule, TParamRule } from "../model/rule-model";
 export class RuleService {
   static async create(request: TAddRule): Promise<any> {
     const validRequest = request as unknown as TAddRule;
@@ -13,6 +13,23 @@ export class RuleService {
         active: validRequest.active,
         description: validRequest.description,
         categoryResult: validRequest.categoryResult as RecommendationCategory,
+      },
+    });
+  }
+
+  static async update(request: TEditRule): Promise<any> {
+    const validRequest = request as unknown as TEditRule;
+
+    return await prismaClient.rule.update({
+      data: {
+        name: validRequest.name,
+        conditions: validRequest.conditions,
+        active: validRequest.active,
+        description: validRequest.description,
+        categoryResult: validRequest.categoryResult as RecommendationCategory,
+      },
+      where: {
+        id: validRequest.id,
       },
     });
   }

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { RuleService } from "../service/rule-service";
-import { TAddRule, TParamRule } from "../model/rule-model";
+import { TAddRule, TEditRule, TParamRule } from "../model/rule-model";
 
 export class RuleController {
   static async create(req: Request, res: Response, next: NextFunction) {
@@ -11,6 +11,20 @@ export class RuleController {
         ok: true,
         data: response,
         message: "Berhasil Menambahkan Rule",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const request = req.body as unknown as TEditRule;
+      const response = await RuleService.update(request);
+      res.status(200).json({
+        ok: true,
+        data: response,
+        message: "Berhasil Edit Rule",
       });
     } catch (error) {
       next(error);

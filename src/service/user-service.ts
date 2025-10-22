@@ -9,8 +9,7 @@ import {
   TUpdateUser,
 } from "../model/user-model";
 import { Validation } from "../validation/validation";
-import { Role } from "../generated/prisma";
-import { Prisma } from "@prisma/client";
+import { Gender, Role } from "../generated/prisma";
 
 export class UserService {
   static async create(request: TCreateUser): Promise<any> {
@@ -109,9 +108,9 @@ export class UserService {
     return await prismaClient.user.delete({
       where: {
         id: selectedId,
-      }
+      },
     });
-  };
+  }
 
   static findUserByID = async (id: string): Promise<any> => {
     const selectedId = parseInt(id);
@@ -121,6 +120,7 @@ export class UserService {
         id: selectedId,
       },
       select: {
+        id: true,
         fullName: true,
         username: true,
         email: true,
@@ -130,40 +130,24 @@ export class UserService {
     });
   };
 
-  // static async update(request: TUpdateUser): Promise<any> {
-  //   const updateRequest = Validation.validate(
-  //     UserValidation.UPDATE,
-  //     request
-  //   ) as unknown as TUpdateUser;
+  static async update(request: TUpdateUser): Promise<any> {
+    const updateRequest = Validation.validate(
+      UserValidation.UPDATE,
+      request
+    ) as unknown as TUpdateUser;
 
-  //   const selectCountUser = await prismaClient.user.count({
-  //     where: {
-  //       username: updateRequest.username,
-  //     },
-  //   });
-
-  //   const selectCountUserEmail = await prismaClient.user.count({
-  //     where: {
-  //       email: updateRequest.email,
-  //     },
-  //   });
-
-  //   if (selectCountUser != 0) {
-  //     throw new ResponseError(400, "Username already exist");
-  //   }
-
-  //   if (selectCountUserEmail != 0) {
-  //     throw new ResponseError(400, "Email already exist");
-  //   }
-
-  //   return await prismaClient.user.update({
-  //     data: {
-  //       ...updateRequest,
-  //     },
-  //     select: {
-  //       fullName: true,
-  //       username: true,
-  //     },
-  //   });
-  // }
+    return await prismaClient.user.update({
+      data: {
+        fullName: updateRequest.fullName,
+        username: updateRequest.username,
+        email: updateRequest.email,
+        gender: updateRequest.gender as Gender,
+        password: updateRequest.password,
+        role: updateRequest.role as Role,
+      },
+      where: {
+        id: updateRequest?.id,
+      },
+    });
+  }
 }

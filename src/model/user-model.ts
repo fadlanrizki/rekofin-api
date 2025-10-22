@@ -16,9 +16,9 @@ export type TRegisterUser = Omit<
   "id" | "role" | "occupation" | "gender"
 >;
 
-export type TCreateUser = Omit<TUser, "id" | "password">;
+export type TCreateUser = Omit<TUser, "id">;
 
-export type TUpdateUser = Partial<TCreateUser>;
+export type TUpdateUser = Partial<Omit<TUser, "occupation">>;
 
 export type FilterUser = {
   role: "all" | "admin" | "employee";
