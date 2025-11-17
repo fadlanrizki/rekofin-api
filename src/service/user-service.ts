@@ -126,6 +126,8 @@ export class UserService {
         email: true,
         role: true,
         gender: true,
+        createdAt: true,
+        occupation: true
       },
     });
   };
