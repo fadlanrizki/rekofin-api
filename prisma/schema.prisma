@@ -15,22 +15,22 @@ datasource db {
 }
 
 model User {
-  id              Int              @id @default(autoincrement())
-  username        String           @unique
-  fullName        String
-  email           String           @unique
-  password        String
-  role            Role
-  occupation      String?
-  gender          Gender?
-  createdAt       DateTime           @default(now())
-  financialInputs FinancialInput[]
-  histories       History[]
+  id         Int         @id @default(autoincrement())
+  username   String      @unique
+  fullName   String
+  email      String      @unique
+  password   String
+  role       Role
+  occupation String?
+  gender     Gender?
+  createdAt  DateTime    @default(now())
+  financial  Financial[]
+  histories  History[]
 
   @@map("user")
 }
 
-model FinancialInput {
+model Financial {
   id                 Int                @id @default(autoincrement())
   user               User               @relation(fields: [userId], references: [id])
   userId             Int
@@ -39,12 +39,13 @@ model FinancialInput {
   emergencyFund      Float
   debt               Float
   monthlyExpenses    Float
+  investment         Float
   riskProfile        RiskProfile
   financialPrinciple FinancialPrinciple
   createdAt          DateTime           @default(now())
   histories          History[]
 
-  @@map("financial_input")
+  @@map("financial")
 }
 
 model Rule {
@@ -60,44 +61,28 @@ model Rule {
 }
 
 model Recommendation {
-  id         Int                     @id @default(autoincrement())
+  id         Int                    @id @default(autoincrement())
   category   RecommendationCategory
-  content    String                  @db.Text
+  content    String                 @db.Text
   sourceType SourceType
   sourceName String
   author     String
   title      String
-  histories  HistoryRecommendation[]
   createdAt  DateTime               @default(now())
-
 
   @@map("recommendation")
 }
 
 model History {
-  id               Int                     @id @default(autoincrement())
-  user             User                    @relation(fields: [userId], references: [id])
-  userId           Int
-  financialInput   FinancialInput          @relation(fields: [financialInputId], references: [id])
-  financialInputId Int
-  categoryResult   RecommendationCategory
-  createdAt        DateTime                @default(now())
-  recommendations  HistoryRecommendation[]
+  id             Int                    @id @default(autoincrement())
+  user           User                   @relation(fields: [userId], references: [id])
+  userId         Int
+  financial      Financial              @relation(fields: [financialId], references: [id])
+  financialId    Int
+  categoryResult RecommendationCategory
+  createdAt      DateTime               @default(now())
 
   @@map("history")
-}
-
-model HistoryRecommendation {
-  id               Int      @id @default(autoincrement())
-  recommendationId Int
-  historyId        Int
-  createdAt        DateTime @default(now())
-
-  recommendation Recommendation @relation(fields: [recommendationId], references: [id])
-  history        History        @relation(fields: [historyId], references: [id])
-
-  @@unique([recommendationId, historyId])
-  @@map("history_recommendation")
 }
 
 enum Role {

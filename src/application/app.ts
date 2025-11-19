@@ -6,6 +6,7 @@ import { authenticateToken } from "../middleware/auth-middleware";
 import userRouter from "../route/user-route";
 import recommendationRouter from "../route/recommendation-route";
 import ruleRouter from "../route/rule-route";
+import financialRouter from "../route/finance-route";
 
 const PORT = process.env.PORT || 5000;
 
@@ -16,6 +17,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", authenticateToken, userRouter);
 app.use("/api/rule", authenticateToken, ruleRouter);
 app.use("/api/recommendation", authenticateToken, recommendationRouter);
+app.use("/api/financial", authenticateToken, financialRouter);
 
 app.use(errorMiddleware);
 
