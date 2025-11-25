@@ -7,5 +7,6 @@ recommendationRouter.get("/", RecommendationController.getList);
 recommendationRouter.get("/:id", RecommendationController.findById);
 recommendationRouter.delete("/:id", RecommendationController.delete);
 recommendationRouter.patch("/", RecommendationController.update);
+recommendationRouter.get("/user/:id", RecommendationController.getRecommendationResult)
 
 export default recommendationRouter;

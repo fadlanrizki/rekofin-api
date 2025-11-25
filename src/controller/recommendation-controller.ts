@@ -76,4 +76,19 @@ export class RecommendationController {
       next(error);
     }
   }
+
+  static async getRecommendationResult(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params.id;
+      // const response = await RecommendationService.getRecommendationResult(id);
+      await RecommendationService.getRecommendationResult(id);
+      // res.status(200).json({
+      //   ok: true,
+      //   data: response,
+      //   message: `Berhasil mendapatkan data hasil rekomendasi`,
+      // });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

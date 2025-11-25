@@ -111,4 +111,20 @@ export class RecommendationService {
       },
     });
   }
+
+  static async getRecommendationResult(id: string) {
+    const userId = parseInt(id);
+    const financialCondition = await prismaClient.financial.findFirst({
+      where: {
+        id: userId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 1,
+    });
+
+    console.log(financialCondition);
+    
+  }
 }
