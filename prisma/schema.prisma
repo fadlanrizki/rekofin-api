@@ -15,106 +15,94 @@ datasource db {
 }
 
 model User {
-  id         Int         @id @default(autoincrement())
-  username   String      @unique
-  fullName   String
-  email      String      @unique
-  password   String
-  role       Role
-  occupation String?
-  gender     Gender?
-  createdAt  DateTime    @default(now())
-  financial  Financial[]
-  histories  History[]
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  fullname  String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
 
-  @@map("user")
+  financialProfile FinancialProfile?
+  histories        RecommendationHistory[]
+
+  @@map("users")
 }
 
-model Financial {
-  id                 Int                @id @default(autoincrement())
-  user               User               @relation(fields: [userId], references: [id])
-  userId             Int
-  monthlyIncome      Float
-  totalSavings       Float
-  emergencyFund      Float
-  debt               Float
-  monthlyExpenses    Float
-  investment         Float
-  riskProfile        RiskProfile
-  financialPrinciple FinancialPrinciple
-  createdAt          DateTime           @default(now())
-  histories          History[]
+model Admin {
+  id        Int      @id @default(autoincrement())
+  name      String
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
 
-  @@map("financial")
+  rules Rule[]
+
+  @@map("admins")
 }
 
-model Rule {
-  id             Int                    @id @default(autoincrement())
-  name           String
-  conditions     Json
-  categoryResult RecommendationCategory
-  description    String
-  active         Boolean                @default(true)
-  createdAt      DateTime               @default(now())
+model FinancialProfile {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
+  income        Decimal  @db.Decimal(15, 2)
+  expenses      Decimal  @db.Decimal(15, 2)
+  savings       Decimal  @db.Decimal(15, 2)
+  emergencyFund Decimal  @db.Decimal(15, 2)
+  investment    Decimal  @db.Decimal(15, 2)
+  updatedAt     DateTime @updatedAt
 
-  @@map("rule")
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("financial_profiles")
+}
+
+model Category {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+
+  recommendations Recommendation[]
+  rules           Rule[]
+
+  @@map("categories")
 }
 
 model Recommendation {
-  id         Int                    @id @default(autoincrement())
-  category   RecommendationCategory
-  content    String                 @db.Text
-  sourceType SourceType
-  sourceName String
-  author     String
-  title      String
-  createdAt  DateTime               @default(now())
+  id         Int      @id @default(autoincrement())
+  categoryId Int
+  message    String
+  source     String?
+  createdAt  DateTime @default(now())
 
-  @@map("recommendation")
+  category  Category                @relation(fields: [categoryId], references: [id])
+  histories RecommendationHistory[]
+
+  @@map("recommendations")
 }
 
-model History {
-  id             Int                    @id @default(autoincrement())
-  user           User                   @relation(fields: [userId], references: [id])
-  userId         Int
-  financial      Financial              @relation(fields: [financialId], references: [id])
-  financialId    Int
-  categoryResult RecommendationCategory
-  createdAt      DateTime               @default(now())
+model Rule {
+  id         Int      @id @default(autoincrement())
+  name       String
+  condition  String
+  conclusion String
+  categoryId Int
+  adminId    Int
+  createdAt  DateTime @default(now())
 
-  @@map("history")
+  category Category @relation(fields: [categoryId], references: [id])
+  admin    Admin    @relation(fields: [adminId], references: [id])
+
+  @@map("rules")
 }
 
-enum Role {
-  admin
-  user
-}
+model RecommendationHistory {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  recommendationId Int
+  generatedAt      DateTime @default(now())
 
-enum Gender {
-  pria
-  wanita
-}
+  user           User           @relation(fields: [userId], references: [id])
+  recommendation Recommendation @relation(fields: [recommendationId], references: [id])
 
-enum RiskProfile {
-  conservative
-  moderate
-  aggressive
-}
-
-enum FinancialPrinciple {
-  syariah
-  conventional
-  both
-}
-
-enum RecommendationCategory {
-  menabung
-  dana_darurat
-  investasi
-}
-
-enum SourceType {
-  book
-  educational
-  influencer
+  @@map("recommendation_histories")
 }
