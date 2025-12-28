@@ -1,12 +1,12 @@
 import { RecommendationController } from "../controller/recommendation-controller";
 import { Router } from "express";
+import { adminAuth } from "../middleware/auth-middleware";
 
 const recommendationRouter = Router();
-recommendationRouter.post("/", RecommendationController.create);
-recommendationRouter.get("/", RecommendationController.getList);
-recommendationRouter.get("/:id", RecommendationController.findById);
-recommendationRouter.delete("/:id", RecommendationController.delete);
-recommendationRouter.patch("/", RecommendationController.update);
-recommendationRouter.get("/user/:id", RecommendationController.getRecommendationResult)
+recommendationRouter.post("/", adminAuth, RecommendationController.create);
+recommendationRouter.get("/", adminAuth, RecommendationController.getList);
+recommendationRouter.get("/:id", adminAuth, RecommendationController.findById);
+recommendationRouter.delete("/:id", adminAuth, RecommendationController.delete);
+recommendationRouter.put("/", adminAuth, RecommendationController.update);
 
 export default recommendationRouter;

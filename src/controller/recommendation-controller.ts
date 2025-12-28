@@ -2,9 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import { RecommendationService } from "../service/recommendation-service";
 import {
   TAddRecommendation,
-  TParamRecommendation,
-  TUpdateRecommendation,
-} from "../model/recommendation-model";
+  TEditRecommendation,
+  TGetListRecommendation,
+} from "../types/api/recommendation";
 
 export class RecommendationController {
   static async create(req: Request, res: Response, next: NextFunction) {
@@ -23,7 +23,7 @@ export class RecommendationController {
 
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const request = req.body as unknown as TUpdateRecommendation;
+      const request = req.body as unknown as TEditRecommendation;
       const response = await RecommendationService.update(request);
       res.status(200).json({
         ok: true,
@@ -37,7 +37,7 @@ export class RecommendationController {
 
   static async getList(req: Request, res: Response, next: NextFunction) {
     try {
-      const request = req.query as unknown as TParamRecommendation;
+      const request = req.query as unknown as TGetListRecommendation;
       const response = await RecommendationService.getList(request);
       res.status(200).json({
         ok: true,
@@ -72,21 +72,6 @@ export class RecommendationController {
         data: response,
         message: `Berhasil mendapatkan data rekomendasi`,
       });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  static async getRecommendationResult(req: Request, res: Response, next: NextFunction) {
-    try {
-      const id = req.params.id;
-      // const response = await RecommendationService.getRecommendationResult(id);
-      await RecommendationService.getRecommendationResult(id);
-      // res.status(200).json({
-      //   ok: true,
-      //   data: response,
-      //   message: `Berhasil mendapatkan data hasil rekomendasi`,
-      // });
     } catch (error) {
       next(error);
     }

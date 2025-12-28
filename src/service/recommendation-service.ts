@@ -1,11 +1,10 @@
 import { prismaClient } from "../application/database";
+import { ResponseError } from "../error/response-error";
 import {
   TAddRecommendation,
-  TParamRecommendation,
-  TUpdateRecommendation,
-} from "../model/recommendation-model";
-import { RecommendationCategory, SourceType } from "../generated/prisma";
-import { ResponseError } from "../error/response-error";
+  TEditRecommendation,
+  TGetListRecommendation,
+} from "../types/api/recommendation";
 
 export class RecommendationService {
   static async create(request: TAddRecommendation): Promise<any> {
@@ -16,8 +15,8 @@ export class RecommendationService {
     });
   }
 
-  static async update(request: TUpdateRecommendation): Promise<any> {
-    const updateRequest = request as unknown as TUpdateRecommendation;
+  static async update(request: TEditRecommendation): Promise<any> {
+    const updateRequest = request as unknown as TEditRecommendation;
 
     return prismaClient.recommendation.update({
       data: {
@@ -29,52 +28,32 @@ export class RecommendationService {
     });
   }
 
-  static async getList(request: TParamRecommendation): Promise<any> {
-    const validRequest = request as unknown as TParamRecommendation;
+  static async getList(request: TGetListRecommendation): Promise<any> {
+    const validRequest = request as unknown as TGetListRecommendation;
 
     const page = parseInt(validRequest.page);
     const limit = parseInt(validRequest.limit);
     const search = validRequest.search;
 
-    const category = validRequest.filter.category;
-    const sourceType = validRequest.filter.sourceType;
-
     const searchCondition = search
       ? {
-          OR: [
-            { title: { contains: search } },
-            { sourceName: { contains: search } },
-            { author: { contains: search } },
-          ],
+          OR: [{ message: { contains: search } }],
         }
       : {};
 
-    const categoryCondition =
-      category === "all"
-        ? { category: { in: Object.values(RecommendationCategory) } }
-        : { category: category as RecommendationCategory };
-
-    const sourceTypeCondition =
-      sourceType === "all"
-        ? { sourceType: { in: Object.values(SourceType) } }
-        : { sourceType: sourceType as SourceType };
-
-    const data = await prismaClient.recommendation.findMany({
-      skip: (page - 1) * limit,
-      take: limit,
-      where: {
-        AND: [searchCondition, categoryCondition, sourceTypeCondition],
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    const total = await prismaClient.recommendation.count({
-      where: {
-        AND: [searchCondition, categoryCondition, sourceTypeCondition],
-      },
-    });
+    const [data, total] = await prismaClient.$transaction([
+      prismaClient.recommendation.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        where: searchCondition,
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+      prismaClient.recommendation.count({
+        where: searchCondition,
+      }),
+    ]);
 
     return {
       data,
@@ -110,21 +89,5 @@ export class RecommendationService {
         id: selectedId,
       },
     });
-  }
-
-  static async getRecommendationResult(id: string) {
-    const userId = parseInt(id);
-    const financialCondition = await prismaClient.financial.findFirst({
-      where: {
-        id: userId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 1,
-    });
-
-    console.log(financialCondition);
-    
   }
 }
