@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import { RuleService } from "../service/rule-service";
-import { TAddRule, TEditRule, TParamRule } from "../model/rule-model";
 
 export class RuleController {
   static async create(req: Request, res: Response, next: NextFunction) {

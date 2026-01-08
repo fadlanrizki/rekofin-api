@@ -2,13 +2,14 @@ import { prismaClient } from "../application/database";
 import { AuthValidation } from "../validation/auth-validation";
 import { Validation } from "../validation/validation";
 import { ResponseError } from "../error/response-error";
-import { USER_SECRET_KEY, ADMIN_SECRET_KEY } from "../utils/env";
+import { ADMIN_SECRET_KEY, USER_SECRET_KEY } from "../utils/env";
 import jwt from "jsonwebtoken";
 import { TLoginRequest, TRegisterUserRequest } from "../types/api/auth";
 import bcrypt from "bcryptjs";
+import { Role } from "../generated/prisma";
 
 export class AuthService {
-  static async userLogin(request: TLoginRequest): Promise<any> {
+  static async login(request: TLoginRequest): Promise<any> {
     const loginRequest = Validation.validate(
       AuthValidation.LOGIN,
       request
@@ -45,6 +46,7 @@ export class AuthService {
         id: true,
         username: true,
         email: true,
+        role: true,
       },
     });
 
@@ -52,73 +54,10 @@ export class AuthService {
       throw new ResponseError(400, "User not found");
     }
 
-    const jwtPayload = {
-      ...selectedUser,
-      type: "USER",
-    };
+    const SECRET_KEY =
+      selectedUser?.role === Role.ADMIN ? ADMIN_SECRET_KEY : USER_SECRET_KEY;
 
-    const token = jwt.sign(jwtPayload, USER_SECRET_KEY, {
-      algorithm: "HS256",
-      expiresIn: "3h",
-    });
-
-    const response = {
-      token,
-    };
-
-    return response;
-  }
-
-  static async adminLogin(request: TLoginRequest): Promise<any> {
-    const loginRequest = Validation.validate(
-      AuthValidation.LOGIN,
-      request
-    ) as unknown as TLoginRequest;
-
-    const user = await prismaClient.admin.findFirst({
-      where: {
-        OR: [
-          { username: loginRequest.credential },
-          { email: loginRequest.credential },
-        ],
-      },
-      select: {
-        id: true,
-        username: true,
-        password: true,
-      },
-    });
-
-    if (!user) {
-      throw new ResponseError(400, "Invalid Username Or Password");
-    }
-
-    if (
-      user.username !== loginRequest.credential ||
-      user.password !== loginRequest.password
-    ) {
-      throw new ResponseError(400, "Invalid Username Or Password");
-    }
-
-    const selectedUser = await prismaClient.admin.findUnique({
-      where: { id: user.id },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-      },
-    });
-
-    if (!selectedUser) {
-      throw new ResponseError(400, "admin not found");
-    }
-
-    const jwtPayload = {
-      ...selectedUser,
-      type: "ADMIN",
-    };
-
-    const token = jwt.sign(jwtPayload, ADMIN_SECRET_KEY, {
+    const token = jwt.sign(selectedUser, SECRET_KEY, {
       algorithm: "HS256",
       expiresIn: "3h",
     });
@@ -161,7 +100,11 @@ export class AuthService {
 
     return await prismaClient.user.create({
       data: {
-        ...registerRequest,
+        username: registerRequest.username,
+        fullname: registerRequest.fullname,
+        email: registerRequest.email,
+        password: registerRequest.password,
+        role: Role.USER,
       },
       select: {
         fullname: true,

@@ -23,6 +23,7 @@
     "swagger-ui-express": "4.6.3",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.2",
+    "uuid": "^13.0.0",
     "winston": "^3.17.0",
     "yup": "^1.4.0",
     "zod": "^4.0.5"

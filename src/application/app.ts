@@ -2,8 +2,9 @@ import express from "express";
 import cors from "cors";
 import authRouter from "../route/auth-route";
 import { errorMiddleware } from "../middleware/error-middleware";
-import categoryRouter from "../route/category-route";
-import recommendationRouter from "../route/recommendation-route";
+import factRouter from "../route/fact-route";
+import { adminAuth } from "../middleware/auth-middleware";
+import questionRouter from "../route/question-route";
 
 const PORT = process.env.PORT || 5000;
 
@@ -11,8 +12,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRouter);
-app.use("/api/category", categoryRouter);
-app.use("/api/recommendation", recommendationRouter)
+app.use("/api/admin/facts", adminAuth, factRouter);
+app.use("/api/admin/questions", adminAuth, questionRouter);
 
 app.use(errorMiddleware);
 

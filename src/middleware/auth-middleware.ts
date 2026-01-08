@@ -6,9 +6,6 @@ import { JwtPayloadBase } from "../types/jwt";
 export interface UserRequest extends Request {
   user?: JwtPayloadBase;
 }
-export interface AdminRequest extends Request {
-  admin?: JwtPayloadBase;
-}
 
 export const userAuth = (
   req: UserRequest,
@@ -29,7 +26,7 @@ export const userAuth = (
       USER_SECRET_KEY as string
     ) as JwtPayloadBase;
 
-    if (decoded.type !== "USER") {
+    if (decoded.role !== "USER") {
       res.status(403).json({ message: "Invalid user token" });
     }
 
@@ -41,7 +38,7 @@ export const userAuth = (
 };
 
 export const adminAuth = (
-  req: AdminRequest,
+  req: UserRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -59,11 +56,11 @@ export const adminAuth = (
       ADMIN_SECRET_KEY as string
     ) as JwtPayloadBase;
 
-    if (decoded.type !== "ADMIN") {
+    if (decoded.role !== "ADMIN") {
       res.status(403).json({ message: "Invalid admin token" });
     }
 
-    req.admin = decoded;
+    req.user = decoded;
     next();
   } catch (error) {
     res.status(401).json({ message: "Admin token invalid or expired" });

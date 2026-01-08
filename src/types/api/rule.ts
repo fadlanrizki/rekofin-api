@@ -1,17 +1,17 @@
-export type TAddRecommendation = {
-  categoryId: number;
-  message: string;
-  source: string;
+export type TAddRule = {
+  name: string;
+  conditions: string[];
+  result: string[];
 };
 
-export type TEditRecommendation = {
+export type TEditRule = {
   id: number;
-  categoryId: number;
-  message: string;
-  source: string;
+  name: string;
+  conditions: string[];
+  result: string[];
 };
 
-export type TGetListRecommendation = {
+export type TGetListRule = {
   page: string;
   limit: string;
   search: string;
