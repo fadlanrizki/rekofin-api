@@ -39,6 +39,8 @@ model User {
 
   consultations Consultation[]
   rulesCreated  Rule[]         @relation("RuleCreatedBy")
+
+  @@map("user")
 }
 
 model Fact {
@@ -49,6 +51,8 @@ model Fact {
   question            Question?
   ruleConditions      RuleCondition[]
   consultationAnswers ConsultationAnswer[]
+
+  @@map("fact")
 }
 
 model Question {
@@ -57,6 +61,8 @@ model Question {
 
   factId Int  @unique
   fact   Fact @relation(fields: [factId], references: [id])
+
+  @@map("question")
 }
 
 model Conclusion {
@@ -68,6 +74,8 @@ model Conclusion {
   ruleResults             RuleResult[]
   recommendations         Recommendation[]
   consultationConclusions ConsultationConclusion[]
+
+  @@map("conclusion")
 }
 
 model Recommendation {
@@ -78,6 +86,8 @@ model Recommendation {
 
   conclusionId Int
   conclusion   Conclusion @relation(fields: [conclusionId], references: [id])
+
+  @@map("recommendation")
 }
 
 model Rule {
@@ -92,6 +102,8 @@ model Rule {
 
   conditions RuleCondition[]
   results    RuleResult[]
+
+  @@map("rule")
 }
 
 ////////////////////////////////////////////////////
@@ -108,6 +120,7 @@ model RuleCondition {
   fact Fact @relation(fields: [factId], references: [id])
 
   @@unique([ruleId, factId])
+  @@map("rule_condition")
 }
 
 model RuleResult {
@@ -120,6 +133,7 @@ model RuleResult {
   conclusion Conclusion @relation(fields: [conclusionId], references: [id])
 
   @@unique([ruleId, conclusionId])
+  @@map("rule_result")
 }
 
 ////////////////////////////////////////////////////
@@ -136,6 +150,8 @@ model Consultation {
 
   answers     ConsultationAnswer[]
   conclusions ConsultationConclusion[]
+
+  @@map("consultation")
 }
 
 model ConsultationAnswer {
@@ -148,6 +164,7 @@ model ConsultationAnswer {
   fact         Fact         @relation(fields: [factId], references: [id])
 
   @@unique([consultationId, factId])
+  @@map("consultation_answer")
 }
 
 model ConsultationConclusion {
@@ -159,4 +176,5 @@ model ConsultationConclusion {
   conclusion   Conclusion   @relation(fields: [conclusionId], references: [id])
 
   @@unique([consultationId, conclusionId])
+  @@map("consultation_conclusion")
 }

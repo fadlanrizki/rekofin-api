@@ -5,6 +5,8 @@ import { TAddRule, TGetListRule } from "../types/api/rule";
 export class RuleService {
   static async create(request: TAddRule): Promise<any> {
     const validRequest = request as unknown as TAddRule;
+
+    console.log(JSON.stringify(validRequest));
   }
 
   static async getList(request: TGetListRule): Promise<any> {

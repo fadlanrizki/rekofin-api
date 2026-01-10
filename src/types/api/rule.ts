@@ -1,6 +1,6 @@
 export type TAddRule = {
   name: string;
-  conditions: string[];
+  conditionFactIds: string[];
   result: string[];
 };
 
@@ -8,7 +8,8 @@ export type TEditRule = {
   id: number;
   name: string;
   conditions: string[];
-  result: string[];
+  conclusions: string[];
+  isActive: true
 };
 
 export type TGetListRule = {
