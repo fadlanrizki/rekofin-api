@@ -3,11 +3,12 @@ import cors from "cors";
 import authRouter from "../route/auth-route";
 import { errorMiddleware } from "../middleware/error-middleware";
 import factRouter from "../route/fact-route";
-import { adminAuth } from "../middleware/auth-middleware";
+import { adminAuth, userAuth } from "../middleware/auth-middleware";
 import questionRouter from "../route/question-route";
 import conclusionRouter from "../route/conclusion-route";
 import recommendationRouter from "../route/recommendation-route";
 import ruleRouter from "../route/rule-route";
+import consultationRouter from "../route/consultation-route";
 
 const PORT = process.env.PORT || 5000;
 
@@ -20,6 +21,7 @@ app.use("/api/admin/recommendations", adminAuth, recommendationRouter);
 app.use("/api/admin/conclusions", adminAuth, conclusionRouter);
 app.use("/api/admin/questions", adminAuth, questionRouter);
 app.use("/api/admin/rules", adminAuth, ruleRouter);
+app.use("/api/user/consultations", userAuth, consultationRouter);
 
 app.use(errorMiddleware);
 

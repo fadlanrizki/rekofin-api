@@ -9,6 +9,7 @@ export class FactService {
       data: {
         code: validRequest.code,
         description: validRequest.description,
+        question: validRequest.question
       },
     });
   }
@@ -20,6 +21,7 @@ export class FactService {
       data: {
         code: validRequest.code,
         description: validRequest.description,
+        question: validRequest.question
       },
       where: {
         id: validRequest.id,

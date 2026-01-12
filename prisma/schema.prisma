@@ -47,22 +47,12 @@ model Fact {
   id          Int    @id @default(autoincrement())
   code        String @unique
   description String
+  question    String
 
-  question            Question?
   ruleConditions      RuleCondition[]
   consultationAnswers ConsultationAnswer[]
 
   @@map("fact")
-}
-
-model Question {
-  id   Int    @id @default(autoincrement())
-  text String
-
-  factId Int  @unique
-  fact   Fact @relation(fields: [factId], references: [id])
-
-  @@map("question")
 }
 
 model Conclusion {
@@ -141,10 +131,11 @@ model RuleResult {
 ////////////////////////////////////////////////////
 
 model Consultation {
-  id     Int @id @default(autoincrement())
-  userId Int
-
-  createdAt DateTime @default(now())
+  id        Int                @id @default(autoincrement())
+  userId    Int
+  status    ConsultationStatus @default(IN_PROGRESS)
+  startedAt DateTime           @default(now())
+  endedAt   DateTime?
 
   user User @relation(fields: [userId], references: [id])
 
@@ -177,4 +168,9 @@ model ConsultationConclusion {
 
   @@unique([consultationId, conclusionId])
   @@map("consultation_conclusion")
+}
+
+enum ConsultationStatus {
+  IN_PROGRESS
+  COMPLETED
 }
