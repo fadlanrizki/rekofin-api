@@ -100,8 +100,8 @@ model Rule {
 
   createdAt DateTime @default(now())
 
-  conditions RuleCondition[]
-  results    RuleResult[]
+  ruleConditions RuleCondition[]
+  ruleResults    RuleResult[]
 
   @@map("rule")
 }

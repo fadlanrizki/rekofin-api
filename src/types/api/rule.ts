@@ -1,15 +1,15 @@
 export type TAddRule = {
   name: string;
-  conditionFactIds: string[];
-  result: string[];
+  conditions: number[];
+  conclusions: number[];
 };
 
 export type TEditRule = {
   id: number;
   name: string;
-  conditions: string[];
-  conclusions: string[];
-  isActive: true
+  conditions: number[];
+  conclusions: number[];
+  isActive: boolean;
 };
 
 export type TGetListRule = {
