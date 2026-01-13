@@ -14,107 +14,163 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+////////////////////////////////////////////////////
+// ENUM
+////////////////////////////////////////////////////
+
+enum Role {
+  ADMIN
+  USER
+}
+
+////////////////////////////////////////////////////
+// MASTER TABLES
+////////////////////////////////////////////////////
+
 model User {
-  id         Int         @id @default(autoincrement())
-  username   String      @unique
-  fullName   String
-  email      String      @unique
-  password   String
-  role       Role
-  occupation String?
-  gender     Gender?
-  createdAt  DateTime    @default(now())
-  financial  Financial[]
-  histories  History[]
+  id       Int    @id @default(autoincrement())
+  fullname String
+  username String
+  email    String @unique
+  password String
+  role     Role   @default(USER)
+
+  createdAt DateTime @default(now())
+
+  consultations Consultation[]
+  rulesCreated  Rule[]         @relation("RuleCreatedBy")
 
   @@map("user")
 }
 
-model Financial {
-  id                 Int                @id @default(autoincrement())
-  user               User               @relation(fields: [userId], references: [id])
-  userId             Int
-  monthlyIncome      Float
-  totalSavings       Float
-  emergencyFund      Float
-  debt               Float
-  monthlyExpenses    Float
-  investment         Float
-  riskProfile        RiskProfile
-  financialPrinciple FinancialPrinciple
-  createdAt          DateTime           @default(now())
-  histories          History[]
+model Fact {
+  id          Int    @id @default(autoincrement())
+  code        String @unique
+  description String
+  question    String
 
-  @@map("financial")
+  ruleConditions      RuleCondition[]
+  consultationAnswers ConsultationAnswer[]
+
+  @@map("fact")
 }
 
-model Rule {
-  id             Int                    @id @default(autoincrement())
-  name           String
-  conditions     Json
-  categoryResult RecommendationCategory
-  description    String
-  active         Boolean                @default(true)
-  createdAt      DateTime               @default(now())
+model Conclusion {
+  id          Int    @id @default(autoincrement())
+  code        String @unique
+  description String
+  category    String
 
-  @@map("rule")
+  ruleResults             RuleResult[]
+  recommendations         Recommendation[]
+  consultationConclusions ConsultationConclusion[]
+
+  @@map("conclusion")
 }
 
 model Recommendation {
-  id         Int                    @id @default(autoincrement())
-  category   RecommendationCategory
-  content    String                 @db.Text
-  sourceType SourceType
-  sourceName String
-  author     String
+  id        Int     @id @default(autoincrement())
   title      String
-  createdAt  DateTime               @default(now())
+  content      String
+  source    String?
+
+  conclusionId Int
+  conclusion   Conclusion @relation(fields: [conclusionId], references: [id])
 
   @@map("recommendation")
 }
 
-model History {
-  id             Int                    @id @default(autoincrement())
-  user           User                   @relation(fields: [userId], references: [id])
-  userId         Int
-  financial      Financial              @relation(fields: [financialId], references: [id])
-  financialId    Int
-  categoryResult RecommendationCategory
-  createdAt      DateTime               @default(now())
+model Rule {
+  id       Int     @id @default(autoincrement())
+  name     String
+  isActive Boolean @default(true)
 
-  @@map("history")
+  createdBy Int
+  creator   User @relation("RuleCreatedBy", fields: [createdBy], references: [id])
+
+  createdAt DateTime @default(now())
+
+  ruleConditions RuleCondition[]
+  ruleResults    RuleResult[]
+
+  @@map("rule")
 }
 
-enum Role {
-  admin
-  user
+////////////////////////////////////////////////////
+// RELATION (JUNCTION) TABLES
+////////////////////////////////////////////////////
+
+model RuleCondition {
+  id Int @id @default(autoincrement())
+
+  ruleId Int
+  factId Int
+
+  rule Rule @relation(fields: [ruleId], references: [id])
+  fact Fact @relation(fields: [factId], references: [id])
+
+  @@unique([ruleId, factId])
+  @@map("rule_condition")
 }
 
-enum Gender {
-  pria
-  wanita
+model RuleResult {
+  id Int @id @default(autoincrement())
+
+  ruleId       Int
+  conclusionId Int
+
+  rule       Rule       @relation(fields: [ruleId], references: [id])
+  conclusion Conclusion @relation(fields: [conclusionId], references: [id])
+
+  @@unique([ruleId, conclusionId])
+  @@map("rule_result")
 }
 
-enum RiskProfile {
-  conservative
-  moderate
-  aggressive
+////////////////////////////////////////////////////
+// TRANSACTION TABLES
+////////////////////////////////////////////////////
+
+model Consultation {
+  id        Int                @id @default(autoincrement())
+  userId    Int
+  status    ConsultationStatus @default(IN_PROGRESS)
+  startedAt DateTime           @default(now())
+  endedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+
+  answers     ConsultationAnswer[]
+  conclusions ConsultationConclusion[]
+
+  @@map("consultation")
 }
 
-enum FinancialPrinciple {
-  syariah
-  conventional
-  both
+model ConsultationAnswer {
+  id             Int     @id @default(autoincrement())
+  consultationId Int
+  factId         Int
+  value          Boolean
+
+  consultation Consultation @relation(fields: [consultationId], references: [id])
+  fact         Fact         @relation(fields: [factId], references: [id])
+
+  @@unique([consultationId, factId])
+  @@map("consultation_answer")
 }
 
-enum RecommendationCategory {
-  menabung
-  dana_darurat
-  investasi
+model ConsultationConclusion {
+  id             Int @id @default(autoincrement())
+  consultationId Int
+  conclusionId   Int
+
+  consultation Consultation @relation(fields: [consultationId], references: [id])
+  conclusion   Conclusion   @relation(fields: [conclusionId], references: [id])
+
+  @@unique([consultationId, conclusionId])
+  @@map("consultation_conclusion")
 }
 
-enum SourceType {
-  book
-  educational
-  influencer
+enum ConsultationStatus {
+  IN_PROGRESS
+  COMPLETED
 }

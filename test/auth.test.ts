@@ -1,29 +1,20 @@
-import { prismaClient } from "../src/application/database"
+import { prismaClient } from "../src/application/database";
+import bcrypt from "bcryptjs";
+import { Role } from "../src/generated/prisma";
 
-describe('test', () => {
-  // it("should test prisma", async() => {
-  //   const res = await prismaClient.user.findMany();
-  //   console.log(res);
-    
-  // })
+describe("test", () => {
+  it("should add seed ", async () => {
+    const hashedPassword = await bcrypt.hash("admin123", 10);
+    const admin = await prismaClient.user.create({
+      data: {
+        username: "admin",
+        fullname: "admin",
+        role: Role.ADMIN,
+        email: "admin@gmail.com",
+        password: hashedPassword,
+      },
+    });
 
-
-  it("unitest buat test prisma client", async() => {
-    const user = await prismaClient.user.findFirst({
-      where: {
-        OR: [
-          {
-            username: "fadlanrizky19@gmail.com"
-          },
-          {
-            email: "fadlanrizky19@gmail.com"
-          }
-        ]
-      }
-    })
-
-    console.log(user);
-    
-  })
-
-})
+    console.log(admin);
+  });
+});
