@@ -116,6 +116,13 @@ export class RuleService {
         },
       });
 
+      // delete old rule condition by id
+      await prismaClient.ruleResult.deleteMany({
+        where: {
+          id: validRequest.id,
+        },
+      });
+
       // insert rule condition
       const ruleConditions = validRequest.conditions.map((id) => {
         return {
@@ -126,13 +133,6 @@ export class RuleService {
 
       await tx.ruleCondition.createMany({
         data: ruleConditions,
-      });
-
-      // delete old rule condition by id
-      await prismaClient.ruleResult.deleteMany({
-        where: {
-          id: validRequest.id,
-        },
       });
 
       // insert rule result
@@ -212,39 +212,41 @@ export class RuleService {
     };
   }
 
-  // static async hardDelete(id: string): Promise<any> {
-  //   const ruleId = parseInt(id);
+  static async hardDelete(id: string): Promise<any> {
+    const ruleId = parseInt(id);
 
-  //   const selectCountRule = await prismaClient.rule.count({
-  //     where: {
-  //       id: ruleId,
-  //     },
-  //   });
+    const selectCountRule = await prismaClient.rule.count({
+      where: {
+        id: ruleId,
+      },
+    });
 
-  //   if (selectCountRule === 0) {
-  //     throw new ResponseError(400, `Data rule with ID : ${id} is not found.`);
-  //   }
+    if (selectCountRule === 0) {
+      throw new ResponseError(400, `Data rule with ID : ${id} is not found.`);
+    }
 
-  //   const result = await prismaClient.$transaction(async (tx) => {
-  //     await tx.ruleCondition.deleteMany({
-  //       where: {
-  //         id: ruleId,
-  //       },
-  //     });
+    const result = await prismaClient.$transaction(async (tx) => {
+      await tx.ruleCondition.deleteMany({
+        where: {
+          ruleId: ruleId,
+        },
+      });
 
-  //     await tx.ruleResult.deleteMany({
-  //       where: {
-  //         id: ruleId,
-  //       },
-  //     });
+      await tx.ruleResult.deleteMany({
+        where: {
+          ruleId: ruleId,
+        },
+      });
 
-  //     await tx.rule.deleteMany({
-  //       where: {
-  //         id: ruleId,
-  //       },
-  //     });
-  //   });
-  // }
+      await tx.rule.deleteMany({
+        where: {
+          id: ruleId,
+        },
+      });
+    });
+
+    return result
+  }
 
   static async softDelete(id: string): Promise<any> {
     const ruleId = parseInt(id);

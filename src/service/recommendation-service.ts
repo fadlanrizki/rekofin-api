@@ -25,9 +25,9 @@ export class RecommendationService {
     return await prismaClient.recommendation.create({
       data: {
         conclusionId: selectedConclusion.id,
-        text: validRequest.text,
+        title: validRequest.title,
+        content: validRequest.content,
         source: validRequest.source,
-        principle: validRequest.principle,
       },
     });
   }
@@ -47,9 +47,9 @@ export class RecommendationService {
     return await prismaClient.recommendation.update({
       data: {
         conclusionId: selectedConclusion.id,
-        text: validRequest.text,
+        title: validRequest.title,
+        content: validRequest.content,
         source: validRequest.source,
-        principle: validRequest.principle,
       },
       where: {
         id: validRequest.id,
@@ -67,7 +67,7 @@ export class RecommendationService {
     const searchCondition = search
       ? {
           OR: [
-            { text: { contains: search } },
+            { title: { contains: search } },
             { source: { contains: search } },
           ],
         }

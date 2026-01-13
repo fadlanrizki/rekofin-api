@@ -5,9 +5,9 @@ const consultationRouter = Router();
 consultationRouter.post("/", ConsultationController.startConsultation);
 consultationRouter.get("/:id/questions", ConsultationController.getConsultationQuestion);
 consultationRouter.post("/:id/answers", ConsultationController.submitConsultationAnswer);
-consultationRouter.get("/:id/result", ConsultationController.getConsultationQuestion);
+consultationRouter.get("/:id/result", ConsultationController.getConsultationResult);
 
 // get consultation history
-// consultationRouter.get("/", ConsultationController.getConsultationQuestion);
+consultationRouter.get("/", ConsultationController.getConsultationHistory);
 
 export default consultationRouter;

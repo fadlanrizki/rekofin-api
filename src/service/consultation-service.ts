@@ -1,7 +1,7 @@
-import { Request } from "express";
 import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
 import { ConsultationStatus } from "../generated/prisma";
+import { TGetList } from "../types/api/common";
 export class ConsultationService {
   static async startConsultation(req: any): Promise<any> {
     const userId = req.user.id;
@@ -190,5 +190,30 @@ export class ConsultationService {
     };
 
     return response;
+  }
+
+  static async getConsultationHistory(req: any): Promise<any> {
+    const userId = Number(req.user.id);
+
+    const params = req?.query as unknown as TGetList 
+
+    const page = Number(params.page);
+    const limit = Number(params.limit);
+    // const search = params.search;
+
+    const consultations = await prismaClient.consultation.findMany({
+      where: { userId },
+      orderBy: { startedAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        id: true,
+        status: true,
+        startedAt: true,
+        endedAt: true,
+      }
+    });
+
+    return consultations;
   }
 }

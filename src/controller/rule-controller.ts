@@ -62,4 +62,18 @@ export class RuleController {
       next(error);
     }
   }
+
+  static async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params?.id;
+      const data = await RuleService.hardDelete(id);
+      res.status(200).json({
+        ok: true,
+        data,
+        message: `Berhasil Delete data Rule`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

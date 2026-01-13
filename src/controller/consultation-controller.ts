@@ -52,4 +52,17 @@ export class ConsultationController {
       next(error);
     }
   }
+
+  static async getConsultationHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const response = await ConsultationService.getConsultationHistory(req);
+      res.status(200).json({
+        ok: true,
+        data: response,
+        message: "Berhasil mendapatkan hasil konsultasi",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
