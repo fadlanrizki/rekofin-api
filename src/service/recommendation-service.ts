@@ -1,79 +1,86 @@
 import { prismaClient } from "../application/database";
+import { ResponseError } from "../error/response-error";
+import { TGetList } from "../types/api/common";
 import {
   TAddRecommendation,
-  TParamRecommendation,
-  TUpdateRecommendation,
-} from "../model/recommendation-model";
-import { RecommendationCategory, SourceType } from "../generated/prisma";
-import { ResponseError } from "../error/response-error";
-
+  TEditRecommendation,
+} from "../types/api/recommendation";
 export class RecommendationService {
   static async create(request: TAddRecommendation): Promise<any> {
-    const registerRequest = request as unknown as TAddRecommendation;
+    const validRequest = request as unknown as TAddRecommendation;
 
-    return prismaClient.recommendation.create({
-      data: { ...registerRequest },
+    if (!validRequest.conclusionCode) {
+      throw new ResponseError(400, `Data Conclusion is required`);
+    }
+
+    const selectedConclusion: any = await prismaClient.conclusion.findUnique({
+      where: {
+        code: validRequest.conclusionCode,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    return await prismaClient.recommendation.create({
+      data: {
+        conclusionId: selectedConclusion.id,
+        title: validRequest.title,
+        content: validRequest.content,
+        source: validRequest.source,
+      },
     });
   }
 
-  static async update(request: TUpdateRecommendation): Promise<any> {
-    const updateRequest = request as unknown as TUpdateRecommendation;
+  static async update(request: TEditRecommendation): Promise<any> {
+    const validRequest = request as unknown as TEditRecommendation;
 
-    return prismaClient.recommendation.update({
+    const selectedConclusion: any = await prismaClient.conclusion.findUnique({
+      where: {
+        code: validRequest.conclusionCode,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    return await prismaClient.recommendation.update({
       data: {
-        ...updateRequest,
+        conclusionId: selectedConclusion.id,
+        title: validRequest.title,
+        content: validRequest.content,
+        source: validRequest.source,
       },
       where: {
-        id: updateRequest.id,
+        id: validRequest.id,
       },
     });
   }
 
-  static async getList(request: TParamRecommendation): Promise<any> {
-    const validRequest = request as unknown as TParamRecommendation;
+  static async getList(request: TGetList): Promise<any> {
+    const validRequest = request as unknown as TGetList;
 
     const page = parseInt(validRequest.page);
     const limit = parseInt(validRequest.limit);
     const search = validRequest.search;
 
-    const category = validRequest.filter.category;
-    const sourceType = validRequest.filter.sourceType;
-
     const searchCondition = search
       ? {
           OR: [
             { title: { contains: search } },
-            { sourceName: { contains: search } },
-            { author: { contains: search } },
+            { source: { contains: search } },
           ],
         }
       : {};
 
-    const categoryCondition =
-      category === "all"
-        ? { category: { in: Object.values(RecommendationCategory) } }
-        : { category: category as RecommendationCategory };
-
-    const sourceTypeCondition =
-      sourceType === "all"
-        ? { sourceType: { in: Object.values(SourceType) } }
-        : { sourceType: sourceType as SourceType };
-
     const data = await prismaClient.recommendation.findMany({
       skip: (page - 1) * limit,
       take: limit,
-      where: {
-        AND: [searchCondition, categoryCondition, sourceTypeCondition],
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+      where: searchCondition,
     });
 
     const total = await prismaClient.recommendation.count({
-      where: {
-        AND: [searchCondition, categoryCondition, sourceTypeCondition],
-      },
+      where: searchCondition,
     });
 
     return {
@@ -83,26 +90,20 @@ export class RecommendationService {
     };
   }
 
-  static async delete(id: string): Promise<any> {
-    const selectedId = parseInt(id);
-    await prismaClient.recommendation.delete({
-      where: {
-        id: selectedId,
-      },
-    });
-  }
-
   static async findById(id: string): Promise<any> {
     const selectedId = parseInt(id);
 
-    const selectCount = await prismaClient.recommendation.count({
+    const selectCountRule = await prismaClient.recommendation.count({
       where: {
         id: selectedId,
       },
     });
 
-    if (!selectCount) {
-      throw new ResponseError(400, "Cannot Get Data, ID not found");
+    if (selectCountRule === 0) {
+      throw new ResponseError(
+        400,
+        `Data recommendation with ID : ${id} is not found.`
+      );
     }
 
     return await prismaClient.recommendation.findUnique({
@@ -110,21 +111,5 @@ export class RecommendationService {
         id: selectedId,
       },
     });
-  }
-
-  static async getRecommendationResult(id: string) {
-    const userId = parseInt(id);
-    const financialCondition = await prismaClient.financial.findFirst({
-      where: {
-        id: userId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: 1,
-    });
-
-    console.log(financialCondition);
-    
   }
 }

@@ -1,17 +1,19 @@
 import { prismaClient } from "../application/database";
-import { getRoleUser, TLoginUser, TRegisterUser } from "../model/user-model";
 import { AuthValidation } from "../validation/auth-validation";
 import { Validation } from "../validation/validation";
 import { ResponseError } from "../error/response-error";
-import { SECRET_KEY } from "../utils/env";
+import { ADMIN_SECRET_KEY, USER_SECRET_KEY } from "../utils/env";
 import jwt from "jsonwebtoken";
+import { TLoginRequest, TRegisterUserRequest } from "../types/api/auth";
+import bcrypt from "bcryptjs";
+import { Role } from "../generated/prisma";
 
 export class AuthService {
-  static async login(request: TLoginUser): Promise<any> {
+  static async login(request: TLoginRequest): Promise<any> {
     const loginRequest = Validation.validate(
       AuthValidation.LOGIN,
       request
-    ) as unknown as TLoginUser;
+    ) as unknown as TLoginRequest;
 
     const user = await prismaClient.user.findFirst({
       where: {
@@ -43,7 +45,6 @@ export class AuthService {
       select: {
         id: true,
         username: true,
-        fullName: true,
         email: true,
         role: true,
       },
@@ -52,6 +53,9 @@ export class AuthService {
     if (!selectedUser) {
       throw new ResponseError(400, "User not found");
     }
+
+    const SECRET_KEY =
+      selectedUser?.role === Role.ADMIN ? ADMIN_SECRET_KEY : USER_SECRET_KEY;
 
     const token = jwt.sign(selectedUser, SECRET_KEY, {
       algorithm: "HS256",
@@ -65,11 +69,11 @@ export class AuthService {
     return response;
   }
 
-  static async register(request: TRegisterUser): Promise<any> {
+  static async registerUser(request: TRegisterUserRequest): Promise<any> {
     const registerRequest = Validation.validate(
       AuthValidation.REGISTER,
       request
-    ) as unknown as TRegisterUser;
+    ) as unknown as TRegisterUserRequest;
 
     const selectCountUser = await prismaClient.user.count({
       where: {
@@ -91,14 +95,19 @@ export class AuthService {
       throw new ResponseError(400, "Email already exist");
     }
 
+    const hashedPassword = await bcrypt.hash(registerRequest.password, 10);
+    registerRequest.password = hashedPassword;
+
     return await prismaClient.user.create({
       data: {
-        ...registerRequest,
-        role: getRoleUser(),
+        username: registerRequest.username,
+        fullname: registerRequest.fullname,
+        email: registerRequest.email,
+        password: registerRequest.password,
+        role: Role.USER,
       },
       select: {
-        fullName: true,
-        username: true,
+        fullname: true,
       },
     });
   }

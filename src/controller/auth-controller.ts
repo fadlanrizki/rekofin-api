@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import { TLoginUser, TRegisterUser } from "../model/user-model";
 import { AuthService } from "../service/auth-service";
+import { TLoginRequest, TRegisterUserRequest } from "../types/api/auth";
 
 export class AuthController {
   static async login(req: Request, res: Response, next: NextFunction) {
     try {
-      const request = req.body as unknown as TLoginUser;
+      const request = req.body as unknown as TLoginRequest;
       const response = await AuthService.login(request);
       res.status(200).json({
         ok: true,
@@ -17,10 +17,10 @@ export class AuthController {
     }
   }
 
-  static async register(req: Request, res: Response, next: NextFunction) {
+  static async registerUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const request = req.body as unknown as TRegisterUser;
-      const response = await AuthService.register(request);
+      const request = req.body as unknown as TRegisterUserRequest;
+      const response = await AuthService.registerUser(request);
       res.status(200).json({
         ok: true,
         data: response,

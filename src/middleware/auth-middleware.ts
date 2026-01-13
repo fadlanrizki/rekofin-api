@@ -1,36 +1,68 @@
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-import { SECRET_KEY } from "../utils/env";
+import { USER_SECRET_KEY, ADMIN_SECRET_KEY } from "../utils/env";
+import { JwtPayloadBase } from "../types/jwt";
 
-interface AuthRequest extends Request {
-  user?: string | JwtPayload;
+export interface UserRequest extends Request {
+  user?: JwtPayloadBase;
 }
 
-export function authenticateToken(
-  req: AuthRequest,
+export const userAuth = (
+  req: UserRequest,
   res: Response,
   next: NextFunction
-) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader?.split(" ")[1] || "";  
+) => {
+  const authHeader = req.headers.authorization || "";
 
-  if (!token) {
-    res.status(403).json({
-      ok: false,
-      data: null,
-      message: "Access Token Required",
-    });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({ message: "User token required" });
   }
 
+  const token = authHeader.split(" ")[1];
+
   try {
-    const decoded = jwt.verify(token, SECRET_KEY);
+    const decoded = jwt.verify(
+      token,
+      USER_SECRET_KEY as string
+    ) as JwtPayloadBase;
+
+    if (decoded.role !== "USER") {
+      res.status(403).json({ message: "Invalid user token" });
+    }
+
     req.user = decoded;
     next();
   } catch (error) {
-    res.status(403).json({
-      ok: false,
-      data: null,
-      message: "Invalid or expired token",
-    });
+    res.status(401).json({ message: "User token invalid or expired" });
   }
-}
+};
+
+export const adminAuth = (
+  req: UserRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const authHeader = req.headers?.authorization || "";
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({ message: "Admin token required" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      ADMIN_SECRET_KEY as string
+    ) as JwtPayloadBase;
+
+    if (decoded.role !== "ADMIN") {
+      res.status(403).json({ message: "Invalid admin token" });
+    }
+
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: "Admin token invalid or expired" });
+  }
+};

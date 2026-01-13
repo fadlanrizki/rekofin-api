@@ -1,73 +1,208 @@
 import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
-import { RecommendationCategory } from "../generated/prisma";
-import { TAddRule, TEditRule, TParamRule } from "../model/rule-model";
+import { TAddRule, TEditRule, TGetListRule } from "../types/api/rule";
+
 export class RuleService {
-  static async create(request: TAddRule): Promise<any> {
+  static async create(request: TAddRule, createdBy: number): Promise<any> {
     const validRequest = request as unknown as TAddRule;
 
-    return await prismaClient.rule.create({
-      data: {
-        name: validRequest.name,
-        conditions: validRequest.conditions,
-        active: validRequest.active,
-        description: validRequest.description,
-        categoryResult: validRequest.categoryResult as RecommendationCategory,
+    const facts = await prismaClient.fact.findMany({
+      where: {
+        id: {
+          in: validRequest.conditions,
+        },
       },
     });
+
+    const conclusions = await prismaClient.conclusion.findMany({
+      where: {
+        id: {
+          in: validRequest.conclusions,
+        },
+      },
+    });
+
+    if (facts.length !== validRequest.conditions.length) {
+      throw new ResponseError(400, `One or more facts is not found.`);
+    }
+
+    if (conclusions.length !== validRequest.conclusions.length) {
+      throw new ResponseError(400, `One or more conclusions is not found.`);
+    }
+
+    const result = await prismaClient.$transaction(async (tx) => {
+      // insert rule
+      const rule = await tx.rule.create({
+        data: {
+          name: validRequest.name,
+          isActive: true,
+          createdBy: createdBy,
+        },
+      });
+
+      // insert rule condition
+      const ruleConditions = validRequest.conditions.map((id) => {
+        return {
+          ruleId: rule.id,
+          factId: id,
+        };
+      });
+
+      await tx.ruleCondition.createMany({
+        data: ruleConditions,
+      });
+
+      // insert rule result
+      const ruleResults = validRequest.conclusions.map((id) => {
+        return {
+          ruleId: rule.id,
+          conclusionId: id,
+        };
+      });
+
+      await tx.ruleResult.createMany({
+        data: ruleResults,
+      });
+
+      return rule;
+    });
+
+    return result;
   }
 
-  static async update(request: TEditRule): Promise<any> {
+  static async update(request: TAddRule): Promise<any> {
     const validRequest = request as unknown as TEditRule;
 
-    return await prismaClient.rule.update({
-      data: {
-        name: validRequest.name,
-        conditions: validRequest.conditions,
-        active: validRequest.active,
-        description: validRequest.description,
-        categoryResult: validRequest.categoryResult as RecommendationCategory,
-      },
+    const facts = await prismaClient.fact.findMany({
       where: {
-        id: validRequest.id,
+        id: {
+          in: validRequest.conditions,
+        },
       },
     });
+
+    const conclusions = await prismaClient.conclusion.findMany({
+      where: {
+        id: {
+          in: validRequest.conclusions,
+        },
+      },
+    });
+
+    if (facts.length !== validRequest.conditions.length) {
+      throw new ResponseError(400, `One or more facts is not found.`);
+    }
+
+    if (conclusions.length !== validRequest.conclusions.length) {
+      throw new ResponseError(400, `One or more conclusions is not found.`);
+    }
+
+    const result = await prismaClient.$transaction(async (tx) => {
+      // insert rule
+      const rule = await tx.rule.update({
+        data: {
+          name: validRequest.name,
+          isActive: true,
+        },
+        where: {
+          id: validRequest.id,
+        },
+      });
+
+      // delete old rule condition by id
+      await prismaClient.ruleCondition.deleteMany({
+        where: {
+          id: validRequest.id,
+        },
+      });
+
+      // delete old rule condition by id
+      await prismaClient.ruleResult.deleteMany({
+        where: {
+          id: validRequest.id,
+        },
+      });
+
+      // insert rule condition
+      const ruleConditions = validRequest.conditions.map((id) => {
+        return {
+          ruleId: rule.id,
+          factId: id,
+        };
+      });
+
+      await tx.ruleCondition.createMany({
+        data: ruleConditions,
+      });
+
+      // insert rule result
+      const ruleResults = validRequest.conclusions.map((id) => {
+        return {
+          ruleId: rule.id,
+          conclusionId: id,
+        };
+      });
+
+      await tx.ruleResult.createMany({
+        data: ruleResults,
+      });
+
+      return rule;
+    });
+
+    return result;
   }
 
-  static async getList(request: TParamRule): Promise<any> {
-    const validRequest = request as unknown as TParamRule;
+  static async getList(request: TGetListRule): Promise<any> {
+    const validRequest = request as unknown as TGetListRule;
 
     const page = parseInt(validRequest.page);
     const limit = parseInt(validRequest.limit);
-    const categoryResult = validRequest.filter.categoryResult;
     const search = validRequest.search;
 
-    const searchCondition = search
-      ? {
-          OR: [
-            { name: { contains: search } },
-            { description: { contains: search } },
-          ],
-        }
-      : {};
+    const searchCondition = search ? { name: { contains: search } } : {};
 
-    const categoryResultCondition =
-      categoryResult === "all"
-        ? { categoryResult: { in: Object.values(RecommendationCategory) } }
-        : { categoryResult: categoryResult as RecommendationCategory };
-
-    const data = await prismaClient.rule.findMany({
+    const rules = await prismaClient.rule.findMany({
+      orderBy: { id: "desc" },
+      include: {
+        ruleConditions: {
+          include: {
+            fact: {
+              select: {
+                id: true,
+                code: true,
+                description: true,
+              },
+            },
+          },
+        },
+        ruleResults: {
+          include: {
+            conclusion: {
+              select: {
+                id: true,
+                code: true,
+                category: true,
+              },
+            },
+          },
+        },
+      },
       skip: (page - 1) * limit,
       take: limit,
-      where: {
-        AND: [searchCondition, categoryResultCondition],
-      },
+      where: searchCondition,
     });
 
+    const data = rules.map((rule) => ({
+      id: rule.id,
+      name: rule.name,
+      isActive: rule.isActive,
+      conditions: rule.ruleConditions.map((rc) => rc.fact),
+      conclusions: rule.ruleResults.map((rr) => rr.conclusion),
+    }));
+
     const total = await prismaClient.rule.count({
-      where: {
-        AND: [searchCondition, categoryResultCondition],
-      },
+      where: searchCondition,
     });
 
     return {
@@ -76,15 +211,66 @@ export class RuleService {
       page,
     };
   }
-  static async delete(id: string): Promise<any> {
-    const selectedId = parseInt(id);
 
-    return await prismaClient.rule.delete({
+  static async hardDelete(id: string): Promise<any> {
+    const ruleId = parseInt(id);
+
+    const selectCountRule = await prismaClient.rule.count({
       where: {
-        id: selectedId,
+        id: ruleId,
+      },
+    });
+
+    if (selectCountRule === 0) {
+      throw new ResponseError(400, `Data rule with ID : ${id} is not found.`);
+    }
+
+    const result = await prismaClient.$transaction(async (tx) => {
+      await tx.ruleCondition.deleteMany({
+        where: {
+          ruleId: ruleId,
+        },
+      });
+
+      await tx.ruleResult.deleteMany({
+        where: {
+          ruleId: ruleId,
+        },
+      });
+
+      await tx.rule.deleteMany({
+        where: {
+          id: ruleId,
+        },
+      });
+    });
+
+    return result
+  }
+
+  static async softDelete(id: string): Promise<any> {
+    const ruleId = parseInt(id);
+
+    const selectCountRule = await prismaClient.rule.count({
+      where: {
+        id: ruleId,
+      },
+    });
+
+    if (selectCountRule === 0) {
+      throw new ResponseError(400, `Data rule with ID : ${id} is not found.`);
+    }
+
+    return await prismaClient.rule.update({
+      data: {
+        isActive: false,
+      },
+      where: {
+        id: ruleId,
       },
     });
   }
+
   static async findById(id: string): Promise<any> {
     const selectedId = parseInt(id);
 
@@ -98,10 +284,41 @@ export class RuleService {
       throw new ResponseError(400, `Data rule with ID : ${id} is not found.`);
     }
 
-    return await prismaClient.rule.findUnique({
-      where: {
-        id: selectedId,
+    const selectedRule: any = await prismaClient.rule.findFirst({
+      include: {
+        ruleConditions: {
+          include: {
+            fact: {
+              select: {
+                id: true,
+                code: true,
+                description: true,
+              },
+            },
+          },
+        },
+        ruleResults: {
+          include: {
+            conclusion: {
+              select: {
+                id: true,
+                code: true,
+                category: true,
+              },
+            },
+          },
+        },
       },
     });
+
+    const data = {
+      id: selectedRule.id,
+      name: selectedRule.name,
+      isActive: selectedRule.isActive,
+      conditions: selectedRule.ruleConditions.map((rc: any) => rc.fact),
+      conclusions: selectedRule.ruleResults.map((rr: any) => rr.conclusion),
+    };
+
+    return data;
   }
 }
