@@ -39,7 +39,7 @@ export class FactService {
     const searchCondition = search
       ? {
           OR: [
-            { name: { contains: search } },
+            { code: { contains: search } },
             { description: { contains: search } },
           ],
         }
