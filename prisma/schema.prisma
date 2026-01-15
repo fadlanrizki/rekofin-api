@@ -49,6 +49,7 @@ model Fact {
   description String
   question    String
   createdAt   DateTime @default(now())
+  isActive    Boolean  @default(true)
 
   ruleConditions      RuleCondition[]
   consultationAnswers ConsultationAnswer[]
@@ -62,6 +63,7 @@ model Conclusion {
   description String
   category    String
   createdAt   DateTime @default(now())
+  isActive    Boolean  @default(true)
 
   ruleResults             RuleResult[]
   recommendations         Recommendation[]
@@ -76,6 +78,7 @@ model Recommendation {
   content   String
   source    String?
   createdAt DateTime @default(now())
+  isActive    Boolean  @default(true)
 
   conclusionId Int
   conclusion   Conclusion @relation(fields: [conclusionId], references: [id])
