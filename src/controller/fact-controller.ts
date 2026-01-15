@@ -46,7 +46,7 @@ export class FactController {
     }
   }
 
-  static async findById(req: Request, res: Response, next: NextFunction) {
+  static async getDetail(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params?.id;
       const data = await FactService.findById(id);
@@ -54,6 +54,20 @@ export class FactController {
         ok: true,
         data,
         message: `Berhasil Get data Fact`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params?.id;
+      const data = await FactService.softDelete(id);
+      res.status(200).json({
+        ok: true,
+        data,
+        message: `Berhasil Delete Fact`,
       });
     } catch (error) {
       next(error);

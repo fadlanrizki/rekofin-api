@@ -9,7 +9,7 @@ export class FactService {
       data: {
         code: validRequest.code,
         description: validRequest.description,
-        question: validRequest.question
+        question: validRequest.question,
       },
     });
   }
@@ -21,7 +21,7 @@ export class FactService {
       data: {
         code: validRequest.code,
         description: validRequest.description,
-        question: validRequest.question
+        question: validRequest.question,
       },
       where: {
         id: validRequest.id,
@@ -38,12 +38,13 @@ export class FactService {
 
     const searchCondition = search
       ? {
+          isActive: true,
           OR: [
             { code: { contains: search } },
             { description: { contains: search } },
           ],
         }
-      : {};
+      : { isActive: true };
 
     const data = await prismaClient.fact.findMany({
       skip: (page - 1) * limit,
@@ -76,6 +77,29 @@ export class FactService {
     }
 
     return await prismaClient.fact.findUnique({
+      where: {
+        id: selectedId,
+      },
+    });
+  }
+
+  static async softDelete(id: string): Promise<any> {
+    const selectedId = parseInt(id);
+
+    const selectCountRule = await prismaClient.fact.count({
+      where: {
+        id: selectedId,
+      },
+    });
+
+    if (selectCountRule === 0) {
+      throw new ResponseError(400, `Data fact with ID : ${id} is not found.`);
+    }
+
+    return await prismaClient.fact.update({
+      data: {
+        isActive: false,
+      },
       where: {
         id: selectedId,
       },
