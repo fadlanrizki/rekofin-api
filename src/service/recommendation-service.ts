@@ -66,12 +66,13 @@ export class RecommendationService {
 
     const searchCondition = search
       ? {
+          isActive: true,
           OR: [
             { title: { contains: search } },
             { source: { contains: search } },
           ],
         }
-      : {};
+      : { isActive: true };
 
     const data = await prismaClient.recommendation.findMany({
       skip: (page - 1) * limit,
@@ -110,6 +111,34 @@ export class RecommendationService {
       where: {
         id: selectedId,
       },
+      include: {
+        conclusion: {
+          select: { code: true, category: true },
+        },
+      },
+    });
+  }
+  static async softDelete(id: string): Promise<any> {
+    const selectedId = parseInt(id);
+
+    const selectCountRule = await prismaClient.recommendation.count({
+      where: {
+        id: selectedId,
+      },
+    });
+
+    if (selectCountRule === 0) {
+      throw new ResponseError(
+        400,
+        `Data recommendation with ID : ${id} is not found.`
+      );
+    }
+
+    return await prismaClient.recommendation.update({
+      where: {
+        id: selectedId,
+      },
+      data: { isActive: false },
     });
   }
 }
