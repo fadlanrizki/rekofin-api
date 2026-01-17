@@ -9,22 +9,13 @@ export class RecommendationService {
   static async create(request: TAddRecommendation): Promise<any> {
     const validRequest = request as unknown as TAddRecommendation;
 
-    if (!validRequest.conclusionCode) {
+    if (!validRequest.conclusionId) {
       throw new ResponseError(400, `Data Conclusion is required`);
     }
 
-    const selectedConclusion: any = await prismaClient.conclusion.findUnique({
-      where: {
-        code: validRequest.conclusionCode,
-      },
-      select: {
-        id: true,
-      },
-    });
-
     return await prismaClient.recommendation.create({
       data: {
-        conclusionId: selectedConclusion.id,
+        conclusionId: validRequest.conclusionId,
         title: validRequest.title,
         content: validRequest.content,
         source: validRequest.source,
@@ -37,7 +28,7 @@ export class RecommendationService {
 
     const selectedConclusion: any = await prismaClient.conclusion.findUnique({
       where: {
-        code: validRequest.conclusionCode,
+        id: validRequest.conclusionId,
       },
       select: {
         id: true,
@@ -78,6 +69,13 @@ export class RecommendationService {
       skip: (page - 1) * limit,
       take: limit,
       where: searchCondition,
+      include: {
+        conclusion: {
+          select: {
+            category: true
+          }
+        },
+      },
     });
 
     const total = await prismaClient.recommendation.count({
@@ -113,7 +111,7 @@ export class RecommendationService {
       },
       include: {
         conclusion: {
-          select: { code: true, category: true },
+          select: { id: true },
         },
       },
     });

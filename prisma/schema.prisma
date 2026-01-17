@@ -75,7 +75,7 @@ model Conclusion {
 model Recommendation {
   id        Int      @id @default(autoincrement())
   title     String
-  content   String
+  content   String   @db.Text
   source    String?
   createdAt DateTime @default(now())
   isActive  Boolean  @default(true)

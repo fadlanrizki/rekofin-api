@@ -65,13 +65,21 @@ export class ConclusionService {
   }
 
   static async getOptions(): Promise<any> {
-    return await prismaClient.conclusion.findMany({
+    const data = await prismaClient.conclusion.findMany({
       where: { isActive: true },
       select: {
+        id: true,
         code: true,
         category: true,
       },
     });
+
+    const formattedData = data.map((item) => ({
+      id: item.id,
+      label: `${item.code} - ${item.category}`,
+    }));
+
+    return formattedData;
   }
 
   static async findById(id: string): Promise<any> {

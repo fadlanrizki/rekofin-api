@@ -11,11 +11,4 @@ export type TEditRule = {
   description: string;
   conditions: number[];
   conclusions: number[];
-  isActive: boolean;
-};
-
-export type TGetListRule = {
-  page: string;
-  limit: string;
-  search: string;
 };

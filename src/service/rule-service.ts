@@ -1,6 +1,7 @@
 import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
-import { TAddRule, TEditRule, TGetListRule } from "../types/api/rule";
+import { TGetList } from "../types/api/common";
+import { TAddRule, TEditRule } from "../types/api/rule";
 
 export class RuleService {
   static async create(request: TAddRule, createdBy: number): Promise<any> {
@@ -71,7 +72,7 @@ export class RuleService {
     return result;
   }
 
-  static async update(request: TAddRule): Promise<any> {
+  static async update(request: TEditRule): Promise<any> {
     const validRequest = request as unknown as TEditRule;
 
     const facts = await prismaClient.fact.findMany({
@@ -104,7 +105,6 @@ export class RuleService {
         data: {
           name: validRequest.name,
           description: validRequest.description,
-          isActive: validRequest.isActive,
         },
         where: {
           id: validRequest.id,
@@ -114,14 +114,14 @@ export class RuleService {
       // delete old rule condition by id
       await prismaClient.ruleCondition.deleteMany({
         where: {
-          id: validRequest.id,
+          ruleId: validRequest.id,
         },
       });
 
       // delete old rule condition by id
       await prismaClient.ruleResult.deleteMany({
         where: {
-          id: validRequest.id,
+          ruleId: validRequest.id,
         },
       });
 
@@ -155,8 +155,8 @@ export class RuleService {
     return result;
   }
 
-  static async getList(request: TGetListRule): Promise<any> {
-    const validRequest = request as unknown as TGetListRule;
+  static async getList(request: TGetList): Promise<any> {
+    const validRequest = request as unknown as TGetList;
 
     const page = parseInt(validRequest.page);
     const limit = parseInt(validRequest.limit);
@@ -200,6 +200,7 @@ export class RuleService {
       name: rule.name,
       description: rule.description,
       isActive: rule.isActive,
+      createdAt: rule.createdAt,
       conditions: rule.ruleConditions.map((rc) => rc.fact),
       conclusions: rule.ruleResults.map((rr) => rr.conclusion),
     }));
@@ -319,6 +320,7 @@ export class RuleService {
       name: selectedRule.name,
       description: selectedRule.description,
       isActive: selectedRule.isActive,
+      createdAt: selectedRule.createdAt,
       conditions: selectedRule.ruleConditions.map((rc: any) => rc.fact),
       conclusions: selectedRule.ruleResults.map((rr: any) => rr.conclusion),
     };

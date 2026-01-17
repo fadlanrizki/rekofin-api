@@ -64,14 +64,21 @@ export class FactService {
   }
 
   static async getOptions(): Promise<any> {
-    return await prismaClient.fact.findMany({
+    const data = await prismaClient.fact.findMany({
       where: { isActive: true },
       select: {
         id: true,
         code: true,
-        question: true,
+        description: true,
       },
     });
+
+    const formattedData = data.map((item) => ({
+      id: item.id,
+      label: `${item.code} - ${item.description}`,
+    }));
+
+    return formattedData;
   }
 
   static async findById(id: string): Promise<any> {
