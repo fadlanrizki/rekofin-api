@@ -46,6 +46,19 @@ export class FactController {
     }
   }
 
+  static async getOptions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const response = await FactService.getOptions();
+      res.status(200).json({
+        ok: true,
+        data: response,
+        message: "Berhasil mendapatkan opsi fakta",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getDetail(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params?.id;

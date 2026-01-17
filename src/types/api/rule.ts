@@ -1,5 +1,6 @@
 export type TAddRule = {
   name: string;
+  description: string;
   conditions: number[];
   conclusions: number[];
 };
@@ -7,6 +8,7 @@ export type TAddRule = {
 export type TEditRule = {
   id: number;
   name: string;
+  description: string;
   conditions: number[];
   conclusions: number[];
   isActive: boolean;

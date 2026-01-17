@@ -35,6 +35,7 @@ export class RuleService {
       const rule = await tx.rule.create({
         data: {
           name: validRequest.name,
+          description: validRequest.description,
           isActive: true,
           createdBy: createdBy,
         },
@@ -102,7 +103,8 @@ export class RuleService {
       const rule = await tx.rule.update({
         data: {
           name: validRequest.name,
-          isActive: true,
+          description: validRequest.description,
+          isActive: validRequest.isActive,
         },
         where: {
           id: validRequest.id,
@@ -196,6 +198,7 @@ export class RuleService {
     const data = rules.map((rule) => ({
       id: rule.id,
       name: rule.name,
+      description: rule.description,
       isActive: rule.isActive,
       conditions: rule.ruleConditions.map((rc) => rc.fact),
       conclusions: rule.ruleResults.map((rr) => rr.conclusion),
@@ -245,7 +248,7 @@ export class RuleService {
       });
     });
 
-    return result
+    return result;
   }
 
   static async softDelete(id: string): Promise<any> {
@@ -314,6 +317,7 @@ export class RuleService {
     const data = {
       id: selectedRule.id,
       name: selectedRule.name,
+      description: selectedRule.description,
       isActive: selectedRule.isActive,
       conditions: selectedRule.ruleConditions.map((rc: any) => rc.fact),
       conclusions: selectedRule.ruleResults.map((rr: any) => rr.conclusion),

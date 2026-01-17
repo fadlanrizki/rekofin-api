@@ -63,6 +63,17 @@ export class FactService {
     };
   }
 
+  static async getOptions(): Promise<any> {
+    return await prismaClient.fact.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        code: true,
+        question: true,
+      },
+    });
+  }
+
   static async findById(id: string): Promise<any> {
     const selectedId = parseInt(id);
 
