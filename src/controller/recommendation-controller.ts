@@ -14,7 +14,7 @@ export class RecommendationController {
       res.status(200).json({
         ok: true,
         data: response,
-        message: "Berhasil Menambahkan Recommendation",
+        message: "Berhasil Menambahkan rekomendasi",
       });
     } catch (error) {
       next(error);
@@ -28,7 +28,7 @@ export class RecommendationController {
       res.status(200).json({
         ok: true,
         data: response,
-        message: "Berhasil Edit Recommendation",
+        message: "Berhasil memperbarui rekomendasi",
       });
     } catch (error) {
       next(error);
@@ -43,7 +43,7 @@ export class RecommendationController {
       res.status(200).json({
         ok: true,
         ...response,
-        message: "Berhasil Get List Recommendation",
+        message: "Berhasil mendapatkan daftar rekomendasi",
       });
     } catch (error) {
       next(error);
@@ -57,7 +57,21 @@ export class RecommendationController {
       res.status(200).json({
         ok: true,
         data,
-        message: `Berhasil Get data Recommendation`,
+        message: `Berhasil mendapatkan detail rekomendasi`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params?.id;
+      const data = await RecommendationService.softDelete(id);
+      res.status(200).json({
+        ok: true,
+        data,
+        message: `Berhasil hapus data rekomendasi`,
       });
     } catch (error) {
       next(error);

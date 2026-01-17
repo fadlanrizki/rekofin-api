@@ -33,9 +33,11 @@ export class AuthService {
       throw new ResponseError(400, "Invalid Username Or Password");
     }
 
+    const validPassword = await bcrypt.compare(loginRequest.password, user.password);
+
     if (
       user.username !== loginRequest.credential ||
-      user.password !== loginRequest.password
+      !validPassword
     ) {
       throw new ResponseError(400, "Invalid Username Or Password");
     }

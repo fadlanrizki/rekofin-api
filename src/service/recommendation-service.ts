@@ -9,22 +9,13 @@ export class RecommendationService {
   static async create(request: TAddRecommendation): Promise<any> {
     const validRequest = request as unknown as TAddRecommendation;
 
-    if (!validRequest.conclusionCode) {
+    if (!validRequest.conclusionId) {
       throw new ResponseError(400, `Data Conclusion is required`);
     }
 
-    const selectedConclusion: any = await prismaClient.conclusion.findUnique({
-      where: {
-        code: validRequest.conclusionCode,
-      },
-      select: {
-        id: true,
-      },
-    });
-
     return await prismaClient.recommendation.create({
       data: {
-        conclusionId: selectedConclusion.id,
+        conclusionId: validRequest.conclusionId,
         title: validRequest.title,
         content: validRequest.content,
         source: validRequest.source,
@@ -37,7 +28,7 @@ export class RecommendationService {
 
     const selectedConclusion: any = await prismaClient.conclusion.findUnique({
       where: {
-        code: validRequest.conclusionCode,
+        id: validRequest.conclusionId,
       },
       select: {
         id: true,
@@ -66,17 +57,25 @@ export class RecommendationService {
 
     const searchCondition = search
       ? {
+          isActive: true,
           OR: [
             { title: { contains: search } },
             { source: { contains: search } },
           ],
         }
-      : {};
+      : { isActive: true };
 
     const data = await prismaClient.recommendation.findMany({
       skip: (page - 1) * limit,
       take: limit,
       where: searchCondition,
+      include: {
+        conclusion: {
+          select: {
+            category: true
+          }
+        },
+      },
     });
 
     const total = await prismaClient.recommendation.count({
@@ -110,6 +109,34 @@ export class RecommendationService {
       where: {
         id: selectedId,
       },
+      include: {
+        conclusion: {
+          select: { id: true },
+        },
+      },
+    });
+  }
+  static async softDelete(id: string): Promise<any> {
+    const selectedId = parseInt(id);
+
+    const selectCountRule = await prismaClient.recommendation.count({
+      where: {
+        id: selectedId,
+      },
+    });
+
+    if (selectCountRule === 0) {
+      throw new ResponseError(
+        400,
+        `Data recommendation with ID : ${id} is not found.`
+      );
+    }
+
+    return await prismaClient.recommendation.update({
+      where: {
+        id: selectedId,
+      },
+      data: { isActive: false },
     });
   }
 }

@@ -44,10 +44,12 @@ model User {
 }
 
 model Fact {
-  id          Int    @id @default(autoincrement())
-  code        String @unique
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
   description String
   question    String
+  createdAt   DateTime @default(now())
+  isActive    Boolean  @default(true)
 
   ruleConditions      RuleCondition[]
   consultationAnswers ConsultationAnswer[]
@@ -56,10 +58,12 @@ model Fact {
 }
 
 model Conclusion {
-  id          Int    @id @default(autoincrement())
-  code        String @unique
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
   description String
   category    String
+  createdAt   DateTime @default(now())
+  isActive    Boolean  @default(true)
 
   ruleResults             RuleResult[]
   recommendations         Recommendation[]
@@ -69,10 +73,12 @@ model Conclusion {
 }
 
 model Recommendation {
-  id        Int     @id @default(autoincrement())
-  title      String
-  content      String
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String   @db.Text
   source    String?
+  createdAt DateTime @default(now())
+  isActive  Boolean  @default(true)
 
   conclusionId Int
   conclusion   Conclusion @relation(fields: [conclusionId], references: [id])
@@ -81,9 +87,10 @@ model Recommendation {
 }
 
 model Rule {
-  id       Int     @id @default(autoincrement())
-  name     String
-  isActive Boolean @default(true)
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String
+  isActive    Boolean @default(true)
 
   createdBy Int
   creator   User @relation("RuleCreatedBy", fields: [createdBy], references: [id])
