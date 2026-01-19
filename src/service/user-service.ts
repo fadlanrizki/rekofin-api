@@ -1,99 +1,34 @@
-import { UserValidation } from "../validation/user-validation";
 import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
-import {
-  getRoleUser,
-  TCreateUser,
-  TParamUser,
-  TRegisterUser,
-  TUpdateUser,
-} from "../model/user-model";
-import { Validation } from "../validation/validation";
-import { Gender, Role } from "../generated/prisma";
+import { TGetList } from "../types/api/common";
 
 export class UserService {
-  static async create(request: TCreateUser): Promise<any> {
-    const registerRequest = Validation.validate(
-      UserValidation.CREATE,
-      request
-    ) as unknown as TRegisterUser;
-
-    const selectCountUser = await prismaClient.user.count({
-      where: {
-        username: registerRequest.username,
-      },
-    });
-
-    const selectCountUserEmail = await prismaClient.user.count({
-      where: {
-        email: registerRequest.email,
-      },
-    });
-
-    if (selectCountUser != 0) {
-      throw new ResponseError(400, "Username already exist");
-    }
-
-    if (selectCountUserEmail != 0) {
-      throw new ResponseError(400, "Email already exist");
-    }
-
-    return await prismaClient.user.create({
-      data: {
-        ...registerRequest,
-        role: getRoleUser(),
-      },
-      select: {
-        fullName: true,
-        username: true,
-      },
-    });
-  }
-
-  static async getList(request: TParamUser): Promise<any> {
-    const validRequest = Validation.validate(
-      UserValidation.LIST,
-      request
-    ) as unknown as TParamUser;
+  static async getList(request: TGetList): Promise<any> {
+    const validRequest = request as unknown as TGetList;
 
     const page = parseInt(validRequest.page);
     const limit = parseInt(validRequest.limit);
-    const role = validRequest.filter.role;
     const search = validRequest.search;
-
-    const roleCondition =
-      role === "all"
-        ? { role: { in: Object.values(Role) } }
-        : { role: role as Role };
 
     const searchCondition = search
       ? {
+          isActive: true,
           OR: [
-            { fullName: { contains: search } },
-            { email: { contains: search } },
+            { fullname: { contains: search } },
+            { username: { contains: search } },
           ],
         }
-      : {};
+      : { isActive: true };
 
     const data = await prismaClient.user.findMany({
       skip: (page - 1) * limit,
       take: limit,
-      where: {
-        AND: [searchCondition, roleCondition],
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      select: {
-        id: true,
-        fullName: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
+      where: searchCondition
     });
 
-    const total = await prismaClient.user.count();
+    const total = await prismaClient.user.count({
+      where: searchCondition,
+    });
 
     return {
       data,
@@ -102,54 +37,27 @@ export class UserService {
     };
   }
 
-  static async delete(id: string): Promise<any> {
+  static async findById(id: string): Promise<any> {
     const selectedId = parseInt(id);
 
-    return await prismaClient.user.delete({
+    const selectCountRule = await prismaClient.user.count({
       where: {
         id: selectedId,
       },
     });
-  }
 
-  static findUserByID = async (id: string): Promise<any> => {
-    const selectedId = parseInt(id);
+    if (selectCountRule === 0) {
+      throw new ResponseError(
+        400,
+        `Data user with ID : ${id} is not found.`
+      );
+    }
 
     return await prismaClient.user.findUnique({
       where: {
         id: selectedId,
-      },
-      select: {
-        id: true,
-        fullName: true,
-        username: true,
-        email: true,
-        role: true,
-        gender: true,
-        createdAt: true,
-        occupation: true
-      },
-    });
-  };
-
-  static async update(request: TUpdateUser): Promise<any> {
-    const updateRequest = Validation.validate(
-      UserValidation.UPDATE,
-      request
-    ) as unknown as TUpdateUser;
-
-    return await prismaClient.user.update({
-      data: {
-        fullName: updateRequest.fullName,
-        username: updateRequest.username,
-        email: updateRequest.email,
-        gender: updateRequest.gender as Gender,
-        password: updateRequest.password,
-        role: updateRequest.role as Role,
-      },
-      where: {
-        id: updateRequest?.id,
-      },
+      }
     });
   }
+  
 }

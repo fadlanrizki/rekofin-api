@@ -9,6 +9,7 @@ import conclusionRouter from "../route/conclusion-route";
 import recommendationRouter from "../route/recommendation-route";
 import ruleRouter from "../route/rule-route";
 import consultationRouter from "../route/consultation-route";
+import userRouter from "../route/user-route";
 
 const PORT = process.env.PORT || 5000;
 
@@ -16,6 +17,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRouter);
+app.use("/api/admin/users", adminAuth, userRouter);
 app.use("/api/admin/facts", adminAuth, factRouter);
 app.use("/api/admin/recommendations", adminAuth, recommendationRouter);
 app.use("/api/admin/conclusions", adminAuth, conclusionRouter);
