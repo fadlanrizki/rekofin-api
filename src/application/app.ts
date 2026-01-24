@@ -10,6 +10,7 @@ import recommendationRouter from "../route/recommendation-route";
 import ruleRouter from "../route/rule-route";
 import consultationRouter from "../route/consultation-route";
 import userRouter from "../route/user-route";
+import dashboardRouter from "../route/dashboard-route";
 
 const PORT = process.env.PORT || 5000;
 
@@ -24,6 +25,7 @@ app.use("/api/admin/conclusions", adminAuth, conclusionRouter);
 app.use("/api/admin/questions", adminAuth, questionRouter);
 app.use("/api/admin/rules", adminAuth, ruleRouter);
 app.use("/api/user/consultations", userAuth, consultationRouter);
+app.use("/api", adminAuth, dashboardRouter);
 
 app.use(errorMiddleware);
 

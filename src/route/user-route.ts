@@ -4,5 +4,7 @@ import { Router } from "express";
 const userRouter = Router();
 userRouter.get("/", UserController.getList);
 userRouter.get("/:id", UserController.findById);
+userRouter.post("/", UserController.create);
+userRouter.delete("/:id", UserController.delete);
 
 export default userRouter;

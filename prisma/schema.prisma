@@ -23,6 +23,12 @@ enum Role {
   USER
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
 ////////////////////////////////////////////////////
 // MASTER TABLES
 ////////////////////////////////////////////////////
@@ -34,6 +40,7 @@ model User {
   email    String  @unique
   password String
   role     Role    @default(USER)
+  gender   Gender?
   isActive Boolean @default(true)
 
   createdAt DateTime @default(now())
