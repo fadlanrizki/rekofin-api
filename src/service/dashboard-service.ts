@@ -1,13 +1,6 @@
 import { prismaClient } from "../application/database";
-import { ResponseError } from "../error/response-error";
 import { ConsultationStatus } from "../generated/prisma";
-import { formatDataChart } from "../utils/chart/dataFormat";
-import {
-  DAYS,
-  getCountOfWeeklyDataChart,
-  getCurrentWeekRange,
-  listWeeklyChart,
-} from "../utils/date";
+import { getCountOfWeeklyDataChart, getCurrentWeekRange } from "../utils/date";
 
 export class DashboardService {
   static async getAdminDashboard(): Promise<any> {
@@ -46,25 +39,6 @@ export class DashboardService {
     const formattedListConsultation = getCountOfWeeklyDataChart(
       numberOfWeeklyConsultationChart.map((item) => item.startedAt),
     );
-
-    const consultationResultChart =
-      await prismaClient.consultationConclusion.findMany({
-        include: {
-          conclusion: {
-            select: {
-              category: true,
-            },
-          },
-        },
-      });
-
-    console.log("consultationResultChart > ", consultationResultChart);
-
-    // const formattedConsultationResultChart = formatDataChart(
-    //   consultationResultChart,
-    //   "status",
-    //   "_count.id",
-    // );
 
     const response = {
       count: {

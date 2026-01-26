@@ -25,7 +25,7 @@ app.use("/api/admin/conclusions", adminAuth, conclusionRouter);
 app.use("/api/admin/questions", adminAuth, questionRouter);
 app.use("/api/admin/rules", adminAuth, ruleRouter);
 app.use("/api/user/consultations", userAuth, consultationRouter);
-app.use("/api", adminAuth, dashboardRouter);
+app.use("/api", dashboardRouter);
 
 app.use(errorMiddleware);
 

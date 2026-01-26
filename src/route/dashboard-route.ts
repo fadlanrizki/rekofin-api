@@ -4,15 +4,15 @@ import { adminAuth, userAuth } from "../middleware/auth-middleware";
 
 const dashboardRouter = Router();
 dashboardRouter.get(
-  "/dashboard/admin",
+  "/admin/dashboard",
   adminAuth,
   DashboardController.getAdminDashboard,
 );
 
-dashboardRouter.get(
-  "/dashboard/user",
-  userAuth,
-  DashboardController.getUserDashboard,
-);
+// dashboardRouter.get(
+//   "/user/dashboard",
+//   userAuth,
+//   DashboardController.getUserDashboard,
+// );
 
 export default dashboardRouter;
