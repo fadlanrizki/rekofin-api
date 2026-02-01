@@ -189,3 +189,24 @@ enum ConsultationStatus {
   IN_PROGRESS
   COMPLETED
 }
+
+model Source {
+  id          Int        @id @default(autoincrement())
+  title       String
+  author      String
+  publisher   String
+  sourceType  SourceType @map("source_type")
+  url         String
+  description String     @db.Text
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  @@map("source")
+}
+
+enum SourceType {
+  BOOK
+  WEBSITE
+  EXPERT
+  JOURNAL
+  OTHER
+}

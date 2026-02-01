@@ -36,6 +36,10 @@ export class ConsultationService {
         id: true,
         code: true,
         question: true,
+        description: true,
+      },
+      where: {
+        isActive: true,
       },
     });
 
@@ -55,11 +59,11 @@ export class ConsultationService {
 
     for (const rule of rules) {
       const conditionFactIds = rule.ruleConditions.map(
-        (ruleCondition) => ruleCondition.factId
+        (ruleCondition) => ruleCondition.factId,
       );
 
       const isMatch = conditionFactIds.every((factId) =>
-        factIds.includes(factId)
+        factIds.includes(factId),
       );
 
       if (isMatch) {
@@ -195,7 +199,7 @@ export class ConsultationService {
   static async getConsultationHistory(req: any): Promise<any> {
     const userId = Number(req.user.id);
 
-    const params = req?.query as unknown as TGetList 
+    const params = req?.query as unknown as TGetList;
 
     const page = Number(params.page);
     const limit = Number(params.limit);
@@ -211,9 +215,26 @@ export class ConsultationService {
         status: true,
         startedAt: true,
         endedAt: true,
-      }
+      },
     });
 
     return consultations;
+  }
+
+  static async getUserConsultationStatus(req: any): Promise<any> {
+    const userId = Number(req.user.id);
+
+    const consultation = await prismaClient.consultation.findFirst({
+      where: { userId, status: "IN_PROGRESS" },
+      orderBy: { startedAt: "desc" },
+      select: {
+        id: true,
+        status: true,
+        startedAt: true,
+        endedAt: true,
+      },
+    });
+
+    return consultation;
   }
 }
