@@ -4,7 +4,7 @@ import { SourceController } from "../controller/source-controller";
 const sourceRouter = express.Router();
 
 sourceRouter.post("/", SourceController.create);
-sourceRouter.put("/:id", SourceController.update);
+sourceRouter.put("/", SourceController.update);
 sourceRouter.delete("/:id", SourceController.delete);
 sourceRouter.get("/:id", SourceController.get);
 sourceRouter.get("/", SourceController.list);

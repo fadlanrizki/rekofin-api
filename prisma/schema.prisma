@@ -84,12 +84,13 @@ model Recommendation {
   id        Int      @id @default(autoincrement())
   title     String
   content   String   @db.Text
-  source    String?
+  sourceId  Int?
   createdAt DateTime @default(now())
   isActive  Boolean  @default(true)
 
   conclusionId Int
   conclusion   Conclusion @relation(fields: [conclusionId], references: [id])
+  source       Source?    @relation(fields: [sourceId], references: [id])
 
   @@map("recommendation")
 }
@@ -194,11 +195,13 @@ model Source {
   id          Int        @id @default(autoincrement())
   title       String
   author      String
-  publisher   String
+  publisher   String?
   sourceType  SourceType @map("source_type")
-  url         String
-  description String     @db.Text
+  url         String?
+  description String?    @db.Text
   createdAt   DateTime   @default(now()) @map("created_at")
+
+  recommendations Recommendation[]
 
   @@map("source")
 }

@@ -6,8 +6,9 @@ export class SourceController {
     try {
       const result = await SourceService.create(req);
       res.status(200).json({
+        ok: true,
         data: result,
-        message: "Source created successfully",
+        message: "Berhasil Menambahkan Source",
       });
     } catch (e) {
       next(e);
@@ -16,10 +17,11 @@ export class SourceController {
 
   static async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await SourceService.update(req);
+      const result = await SourceService.update(req.body);
       res.status(200).json({
+        ok: true,
         data: result,
-        message: "Source updated successfully",
+        message: "Berhasil Edit Source",
       });
     } catch (e) {
       next(e);
@@ -30,7 +32,8 @@ export class SourceController {
     try {
       await SourceService.delete(req);
       res.status(200).json({
-        message: "Source deleted successfully",
+        ok: true,
+        message: "Berhasil Delete Source",
       });
     } catch (e) {
       next(e);
@@ -41,7 +44,9 @@ export class SourceController {
     try {
       const result = await SourceService.get(req);
       res.status(200).json({
+        ok: true,
         data: result,
+        message: "Berhasil Get Data Source",
       });
     } catch (e) {
       next(e);
@@ -52,8 +57,9 @@ export class SourceController {
     try {
       const result = await SourceService.list(req);
       res.status(200).json({
-        data: result.data,
-        paging: result.paging,
+        ok: true,
+        ...result,
+        message: "Berhasil Get List Source",
       });
     } catch (e) {
       next(e);

@@ -1,6 +1,7 @@
 import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
 import { TGetList } from "../types/api/common";
+import { TEditSource } from "../types/api/source";
 import { SourceValidation } from "../validation/source-validation";
 import { Validation } from "../validation/validation";
 
@@ -15,13 +16,12 @@ export class SourceService {
     return source;
   }
 
-  static async update(req: any) {
-    const id = Number(req.params.id);
-    const request = Validation.validate(SourceValidation.UPDATE, req.body);
+  static async update(req: TEditSource) {
+    const request = req as unknown as TEditSource;
 
     const checkSource = await prismaClient.source.findUnique({
       where: {
-        id: id,
+        id: request.id,
       },
     });
 
@@ -31,7 +31,7 @@ export class SourceService {
 
     const source = await prismaClient.source.update({
       where: {
-        id: id,
+        id: request.id,
       },
       data: request as any,
     });
@@ -93,7 +93,7 @@ export class SourceService {
       ];
     }
 
-    const sources = await prismaClient.source.findMany({
+    const data = await prismaClient.source.findMany({
       where: where,
       skip: skip,
       take: take,
@@ -107,13 +107,9 @@ export class SourceService {
     });
 
     return {
-      data: sources,
-      paging: {
-        page: Number(page),
-        limit: Number(limit),
-        total: total,
-        totalPage: Math.ceil(total / Number(limit)),
-      },
+      data,
+      total,
+      page: Number(page)
     };
   }
 }

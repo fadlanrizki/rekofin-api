@@ -1,6 +1,7 @@
 import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
-import { TAddFact, TEditFact, TGetListFact } from "../types/api/fact";
+import { TGetList } from "../types/api/common";
+import { TAddFact, TEditFact } from "../types/api/fact";
 export class FactService {
   static async create(request: TAddFact): Promise<any> {
     const validRequest = request as unknown as TAddFact;
@@ -29,8 +30,8 @@ export class FactService {
     });
   }
 
-  static async getList(request: TGetListFact): Promise<any> {
-    const validRequest = request as unknown as TGetListFact;
+  static async getList(request: TGetList): Promise<any> {
+    const validRequest = request as unknown as TGetList;
 
     const page = parseInt(validRequest.page);
     const limit = parseInt(validRequest.limit);

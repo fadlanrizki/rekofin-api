@@ -2,7 +2,7 @@ export type TAddRecommendation = {
   conclusionId: number;
   title: string;
   content: string;
-  source: string;
+  sourceId: number;
 };
 
 export type TEditRecommendation = {
@@ -10,5 +10,5 @@ export type TEditRecommendation = {
   conclusionId: number;
   title: string;
   content: string;
-  source: string;
+  sourceId: number;
 };
