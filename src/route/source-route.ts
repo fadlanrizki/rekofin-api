@@ -8,5 +8,6 @@ sourceRouter.put("/", SourceController.update);
 sourceRouter.delete("/:id", SourceController.delete);
 sourceRouter.get("/:id", SourceController.get);
 sourceRouter.get("/", SourceController.list);
+sourceRouter.get("/options", SourceController.getOptions);
 
 export default sourceRouter;

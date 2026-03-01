@@ -112,4 +112,20 @@ export class SourceService {
       page: Number(page)
     };
   }
+
+  static async getOptions(req: any) {
+    const data = await prismaClient.source.findMany({
+      select: {
+        id: true,
+        title: true,
+      },
+    });
+
+    const formattedData = data.map((item) => ({
+      id: item.id,
+      label: `${item.title}`,
+    }));
+
+    return formattedData;
+  }
 }

@@ -65,4 +65,17 @@ export class SourceController {
       next(e);
     }
   }
+
+  static async getOptions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await SourceService.getOptions(req);
+      res.status(200).json({
+        ok: true,
+        data: result,
+        message: "Berhasil Get List options Source",
+      });
+    } catch (e) {
+      next(e);
+    }
+  }
 }
