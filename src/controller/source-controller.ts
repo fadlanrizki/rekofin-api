@@ -40,9 +40,9 @@ export class SourceController {
     }
   }
 
-  static async get(req: Request, res: Response, next: NextFunction) {
+  static async getDetail(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await SourceService.get(req);
+      const result = await SourceService.getDetail(req);
       res.status(200).json({
         ok: true,
         data: result,

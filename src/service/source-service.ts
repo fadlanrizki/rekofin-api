@@ -61,7 +61,7 @@ export class SourceService {
     return { message: "Source deleted successfully" };
   }
 
-  static async get(req: any) {
+  static async getDetail(req: any) {
     const id = Number(req.params.id);
 
     const source = await prismaClient.source.findUnique({

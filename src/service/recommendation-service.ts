@@ -77,7 +77,11 @@ export class RecommendationService {
             code: true,
           }
         },
-        source: true,
+        source: {
+          select: {
+            title: true,
+          }
+        }
       },
     });
 
@@ -116,7 +120,11 @@ export class RecommendationService {
         conclusion: {
           select: { id: true, code: true, description: true },
         },
-        source: true,
+        source: {
+          select: {
+            id: true
+          },
+        },
       },
     });
   }

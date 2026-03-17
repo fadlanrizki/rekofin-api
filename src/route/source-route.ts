@@ -6,8 +6,8 @@ const sourceRouter = express.Router();
 sourceRouter.post("/", SourceController.create);
 sourceRouter.put("/", SourceController.update);
 sourceRouter.delete("/:id", SourceController.delete);
-sourceRouter.get("/:id", SourceController.get);
-sourceRouter.get("/", SourceController.list);
 sourceRouter.get("/options", SourceController.getOptions);
+sourceRouter.get("/", SourceController.list);
+sourceRouter.get("/:id", SourceController.getDetail);
 
 export default sourceRouter;
