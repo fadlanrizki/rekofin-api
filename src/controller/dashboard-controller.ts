@@ -25,7 +25,7 @@ export class DashboardController {
     next: NextFunction,
   ) {
     try {
-      const response = await DashboardService.getUserDashboard();
+      const response = await DashboardService.getUserDashboard(req);
       res.status(200).json({
         ok: true,
         data: response,

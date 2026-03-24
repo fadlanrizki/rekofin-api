@@ -52,6 +52,7 @@ export class ConsultationController {
       next(error);
     }
   }
+
   static async getConsultationResult(
     req: Request,
     res: Response,
@@ -63,6 +64,23 @@ export class ConsultationController {
         ok: true,
         data: response,
         message: "Berhasil mendapatkan hasil konsultasi",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getLatestConsultationResult(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const response = await ConsultationService.getLatestConsultationResult(req);
+      res.status(200).json({
+        ok: true,
+        data: response,
+        message: "Berhasil mendapatkan hasil konsultasi terbaru",
       });
     } catch (error) {
       next(error);

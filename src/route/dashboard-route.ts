@@ -9,10 +9,10 @@ dashboardRouter.get(
   DashboardController.getAdminDashboard,
 );
 
-// dashboardRouter.get(
-//   "/user/dashboard",
-//   userAuth,
-//   DashboardController.getUserDashboard,
-// );
+dashboardRouter.get(
+  "/user/dashboard",
+  userAuth,
+  DashboardController.getUserDashboard,
+);
 
 export default dashboardRouter;

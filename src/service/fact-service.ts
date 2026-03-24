@@ -39,11 +39,11 @@ export class FactService {
 
     const searchCondition = search
       ? {
-          isActive: true,
           OR: [
-            { code: { contains: search } },
+            { title: { contains: search } },
             { description: { contains: search } },
           ],
+          isActive: true,
         }
       : { isActive: true };
 

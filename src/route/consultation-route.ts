@@ -19,8 +19,13 @@ consultationRouter.get(
   "/status",
   ConsultationController.getUserConsultationStatus,
 );
-
-// get consultation history
-consultationRouter.get("/", ConsultationController.getConsultationHistory);
+consultationRouter.get(
+  "/history",
+  ConsultationController.getConsultationHistory,
+);
+consultationRouter.get(
+  "/latest",
+  ConsultationController.getLatestConsultationResult,
+);
 
 export default consultationRouter;
