@@ -1,6 +1,7 @@
 import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
-import { TAddFact, TEditFact, TGetListFact } from "../types/api/fact";
+import { TGetList } from "../types/api/common";
+import { TAddFact, TEditFact } from "../types/api/fact";
 export class FactService {
   static async create(request: TAddFact): Promise<any> {
     const validRequest = request as unknown as TAddFact;
@@ -9,7 +10,7 @@ export class FactService {
       data: {
         code: validRequest.code,
         description: validRequest.description,
-        question: validRequest.question
+        question: validRequest.question,
       },
     });
   }
@@ -21,7 +22,7 @@ export class FactService {
       data: {
         code: validRequest.code,
         description: validRequest.description,
-        question: validRequest.question
+        question: validRequest.question,
       },
       where: {
         id: validRequest.id,
@@ -29,8 +30,8 @@ export class FactService {
     });
   }
 
-  static async getList(request: TGetListFact): Promise<any> {
-    const validRequest = request as unknown as TGetListFact;
+  static async getList(request: TGetList): Promise<any> {
+    const validRequest = request as unknown as TGetList;
 
     const page = parseInt(validRequest.page);
     const limit = parseInt(validRequest.limit);
@@ -39,11 +40,12 @@ export class FactService {
     const searchCondition = search
       ? {
           OR: [
-            { name: { contains: search } },
+            { title: { contains: search } },
             { description: { contains: search } },
           ],
+          isActive: true,
         }
-      : {};
+      : { isActive: true };
 
     const data = await prismaClient.fact.findMany({
       skip: (page - 1) * limit,
@@ -62,6 +64,24 @@ export class FactService {
     };
   }
 
+  static async getOptions(): Promise<any> {
+    const data = await prismaClient.fact.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        code: true,
+        description: true,
+      },
+    });
+
+    const formattedData = data.map((item) => ({
+      id: item.id,
+      label: `${item.code} - ${item.description}`,
+    }));
+
+    return formattedData;
+  }
+
   static async findById(id: string): Promise<any> {
     const selectedId = parseInt(id);
 
@@ -76,6 +96,29 @@ export class FactService {
     }
 
     return await prismaClient.fact.findUnique({
+      where: {
+        id: selectedId,
+      },
+    });
+  }
+
+  static async softDelete(id: string): Promise<any> {
+    const selectedId = parseInt(id);
+
+    const selectCountRule = await prismaClient.fact.count({
+      where: {
+        id: selectedId,
+      },
+    });
+
+    if (selectCountRule === 0) {
+      throw new ResponseError(400, `Data fact with ID : ${id} is not found.`);
+    }
+
+    return await prismaClient.fact.update({
+      data: {
+        isActive: false,
+      },
       where: {
         id: selectedId,
       },

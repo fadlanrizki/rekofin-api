@@ -12,7 +12,7 @@ export class AuthService {
   static async login(request: TLoginRequest): Promise<any> {
     const loginRequest = Validation.validate(
       AuthValidation.LOGIN,
-      request
+      request,
     ) as unknown as TLoginRequest;
 
     const user = await prismaClient.user.findFirst({
@@ -33,10 +33,12 @@ export class AuthService {
       throw new ResponseError(400, "Invalid Username Or Password");
     }
 
-    if (
-      user.username !== loginRequest.credential ||
-      user.password !== loginRequest.password
-    ) {
+    const validPassword = await bcrypt.compare(
+      loginRequest.password,
+      user.password,
+    );
+
+    if (user.username !== loginRequest.credential || !validPassword) {
       throw new ResponseError(400, "Invalid Username Or Password");
     }
 
@@ -59,7 +61,7 @@ export class AuthService {
 
     const token = jwt.sign(selectedUser, SECRET_KEY, {
       algorithm: "HS256",
-      expiresIn: "3h",
+      expiresIn: "10h",
     });
 
     const response = {
@@ -72,7 +74,7 @@ export class AuthService {
   static async registerUser(request: TRegisterUserRequest): Promise<any> {
     const registerRequest = Validation.validate(
       AuthValidation.REGISTER,
-      request
+      request,
     ) as unknown as TRegisterUserRequest;
 
     const selectCountUser = await prismaClient.user.count({

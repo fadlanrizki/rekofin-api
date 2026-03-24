@@ -39,12 +39,13 @@ export class ConclusionService {
 
     const searchCondition = search
       ? {
+          isActive: true,
           OR: [
-            { name: { contains: search } },
-            { description: { contains: search } },
+            { code: { contains: search } },
+            { category: { contains: search } },
           ],
         }
-      : {};
+      : { isActive: true };
 
     const data = await prismaClient.conclusion.findMany({
       skip: (page - 1) * limit,
@@ -63,7 +64,48 @@ export class ConclusionService {
     };
   }
 
+  static async getOptions(): Promise<any> {
+    const data = await prismaClient.conclusion.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        code: true,
+        category: true,
+      },
+    });
+
+    const formattedData = data.map((item) => ({
+      id: item.id,
+      label: `${item.code} - ${item.category}`,
+    }));
+
+    return formattedData;
+  }
+
   static async findById(id: string): Promise<any> {
+    const selectedId = parseInt(id);
+
+    const selectCountRule = await prismaClient.conclusion.count({
+      where: {
+        id: selectedId,
+      },
+    });
+
+    if (selectCountRule === 0) {
+      throw new ResponseError(
+        400,
+        `Data kesimpulan dengan ID : ${id} tidak ditemukan.`
+      );
+    }
+
+    return await prismaClient.conclusion.findUnique({
+      where: {
+        id: selectedId,
+      },
+    });
+  }
+
+  static async softDelete(id: string): Promise<any> {
     const selectedId = parseInt(id);
 
     const selectCountRule = await prismaClient.conclusion.count({
@@ -79,9 +121,12 @@ export class ConclusionService {
       );
     }
 
-    return await prismaClient.fact.findUnique({
+    return await prismaClient.conclusion.update({
       where: {
         id: selectedId,
+      },
+      data: {
+        isActive: false,
       },
     });
   }

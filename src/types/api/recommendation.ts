@@ -1,14 +1,14 @@
 export type TAddRecommendation = {
-  conclusionCode: string;
+  conclusionId: number;
   title: string;
   content: string;
-  source: string;
+  sourceId: number;
 };
 
 export type TEditRecommendation = {
   id: number;
-  conclusionCode: string;
+  conclusionId: number;
   title: string;
   content: string;
-  source: string;
+  sourceId: number;
 };

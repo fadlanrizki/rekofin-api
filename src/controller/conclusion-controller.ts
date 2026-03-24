@@ -11,7 +11,7 @@ export class ConclusionController {
       res.status(200).json({
         ok: true,
         data: response,
-        message: "Berhasil Menambahkan Conclusion",
+        message: "Berhasil Menambahkan data kesimpulan",
       });
     } catch (error) {
       next(error);
@@ -25,7 +25,7 @@ export class ConclusionController {
       res.status(200).json({
         ok: true,
         data: response,
-        message: "Berhasil Edit Conclusion",
+        message: "Berhasil memperbarui data kesimpulan",
       });
     } catch (error) {
       next(error);
@@ -40,21 +40,47 @@ export class ConclusionController {
       res.status(200).json({
         ok: true,
         ...response,
-        message: "Berhasil Get List Conclusion",
+        message: "Berhasil mendapatkan daftar kesimpulan",
       });
     } catch (error) {
       next(error);
     }
   }
 
-  static async findById(req: Request, res: Response, next: NextFunction) {
+  static async getOptions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const response = await ConclusionService.getOptions();
+      res.status(200).json({
+        ok: true,
+        data: response,
+        message: "Berhasil Mendapatkan data opsi kesimpulan",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getDetail(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params?.id;
       const data = await ConclusionService.findById(id);
       res.status(200).json({
         ok: true,
         data,
-        message: `Berhasil Get data Conclusion`,
+        message: `Berhasil mendapatkan data kesimpulan dengan id ${id}`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  static async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = req.params?.id;
+      const data = await ConclusionService.softDelete(id);
+      res.status(200).json({
+        ok: true,
+        data,
+        message: `Berhasil hapus data kesimpulan`,
       });
     } catch (error) {
       next(error);

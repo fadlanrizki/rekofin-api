@@ -36,6 +36,10 @@ export class ConsultationService {
         id: true,
         code: true,
         question: true,
+        description: true,
+      },
+      where: {
+        isActive: true,
       },
     });
 
@@ -55,11 +59,11 @@ export class ConsultationService {
 
     for (const rule of rules) {
       const conditionFactIds = rule.ruleConditions.map(
-        (ruleCondition) => ruleCondition.factId
+        (ruleCondition) => ruleCondition.factId,
       );
 
       const isMatch = conditionFactIds.every((factId) =>
-        factIds.includes(factId)
+        factIds.includes(factId),
       );
 
       if (isMatch) {
@@ -192,28 +196,94 @@ export class ConsultationService {
     return response;
   }
 
+  static async getLatestConsultationResult(req: any): Promise<any> {
+    const userId = req.user.id;
+    const consultation = await prismaClient.consultation.findFirst({
+      where: { userId, status: "COMPLETED" },
+      orderBy: { endedAt: "desc" },
+      include: {
+        answers: {
+          where: { value: true },
+          include: { fact: true },
+        },
+        conclusions: {
+          include: {
+            conclusion: {
+              include: {
+                recommendations: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!consultation) {
+      throw new ResponseError(404, `Consultation is not found.`);
+    }
+
+    const response = {
+      consultationId: consultation.id,
+      facts: consultation.answers.map((a) => ({
+        code: a.fact.code,
+        question: a.fact.question,
+      })),
+      conclusions: consultation.conclusions.map((c) => c.conclusion),
+    };
+
+    return response;
+  }
+
   static async getConsultationHistory(req: any): Promise<any> {
     const userId = Number(req.user.id);
-
-    const params = req?.query as unknown as TGetList 
+    const params = req?.query as unknown as TGetList;
 
     const page = Number(params.page);
     const limit = Number(params.limit);
     // const search = params.search;
 
+    const searchCondition = {
+      userId: userId,
+    };
+
     const consultations = await prismaClient.consultation.findMany({
-      where: { userId },
       orderBy: { startedAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
+      where: searchCondition,
+      include: {
+        conclusions: {
+          include: {
+            conclusion: {
+              select: {
+                id: true,
+                code: true,
+                description: true,
+                category: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return consultations;
+  }
+
+  static async getUserConsultationStatus(req: any): Promise<any> {
+    const userId = Number(req.user.id);
+
+    const consultation = await prismaClient.consultation.findFirst({
+      where: { userId, status: "IN_PROGRESS" },
+      orderBy: { startedAt: "desc" },
       select: {
         id: true,
         status: true,
         startedAt: true,
         endedAt: true,
-      }
+      },
     });
 
-    return consultations;
+    return consultation;
   }
 }
