@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { UserService } from "../service/user-service";
 import { TGetList } from "../types/api/common";
 import { TCreateUser } from "../types/api/user";
@@ -55,6 +55,44 @@ export class UserController {
         ok: true,
         data,
         message: `Berhasil menghapus data user`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await UserService.getProfile(req);
+      res.status(200).json({
+        ok: true,
+        data,
+        message: `Berhasil mengambil data detail user`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateProfile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await UserService.updateProfile(req);
+      res.status(200).json({
+        ok: true,
+        data,
+        message: `Berhasil memperbarui data user`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      await UserService.changePassword(req);
+      res.status(200).json({
+        ok: true,
+        message: `Berhasil mengubah password`,
       });
     } catch (error) {
       next(error);
