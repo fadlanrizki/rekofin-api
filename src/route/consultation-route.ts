@@ -3,11 +3,29 @@ import { ConsultationController } from "../controller/consultation-controller";
 
 const consultationRouter = Router();
 consultationRouter.post("/", ConsultationController.startConsultation);
-consultationRouter.get("/:id/questions", ConsultationController.getConsultationQuestion);
-consultationRouter.post("/:id/answers", ConsultationController.submitConsultationAnswer);
-consultationRouter.get("/:id/result", ConsultationController.getConsultationResult);
-
-// get consultation history
-consultationRouter.get("/", ConsultationController.getConsultationHistory);
+consultationRouter.get(
+  "/:id/questions",
+  ConsultationController.getConsultationQuestion,
+);
+consultationRouter.post(
+  "/:id/answers",
+  ConsultationController.submitConsultationAnswer,
+);
+consultationRouter.get(
+  "/:id/result",
+  ConsultationController.getConsultationResult,
+);
+consultationRouter.get(
+  "/status",
+  ConsultationController.getUserConsultationStatus,
+);
+consultationRouter.get(
+  "/history",
+  ConsultationController.getConsultationHistory,
+);
+consultationRouter.get(
+  "/latest",
+  ConsultationController.getLatestConsultationResult,
+);
 
 export default consultationRouter;

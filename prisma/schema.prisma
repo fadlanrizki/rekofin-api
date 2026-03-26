@@ -23,17 +23,25 @@ enum Role {
   USER
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
 ////////////////////////////////////////////////////
 // MASTER TABLES
 ////////////////////////////////////////////////////
 
 model User {
-  id       Int    @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   fullname String
-  username String
-  email    String @unique
+  username String  @unique
+  email    String  @unique
   password String
-  role     Role   @default(USER)
+  role     Role    @default(USER)
+  gender   Gender?
+  isActive Boolean @default(true)
 
   createdAt DateTime @default(now())
 
@@ -46,7 +54,7 @@ model User {
 model Fact {
   id          Int      @id @default(autoincrement())
   code        String   @unique
-  description String
+  description String   @db.Text
   question    String
   createdAt   DateTime @default(now())
   isActive    Boolean  @default(true)
@@ -60,7 +68,7 @@ model Fact {
 model Conclusion {
   id          Int      @id @default(autoincrement())
   code        String   @unique
-  description String
+  description String   @db.Text
   category    String
   createdAt   DateTime @default(now())
   isActive    Boolean  @default(true)
@@ -76,12 +84,13 @@ model Recommendation {
   id        Int      @id @default(autoincrement())
   title     String
   content   String   @db.Text
-  source    String?
+  sourceId  Int?
   createdAt DateTime @default(now())
   isActive  Boolean  @default(true)
 
   conclusionId Int
   conclusion   Conclusion @relation(fields: [conclusionId], references: [id])
+  source       Source?    @relation(fields: [sourceId], references: [id])
 
   @@map("recommendation")
 }
@@ -89,7 +98,7 @@ model Recommendation {
 model Rule {
   id          Int     @id @default(autoincrement())
   name        String
-  description String
+  description String  @db.Text
   isActive    Boolean @default(true)
 
   createdBy Int
@@ -180,4 +189,27 @@ model ConsultationConclusion {
 enum ConsultationStatus {
   IN_PROGRESS
   COMPLETED
+}
+
+model Source {
+  id          Int        @id @default(autoincrement())
+  title       String
+  author      String
+  publisher   String?
+  sourceType  SourceType @map("source_type")
+  url         String?
+  description String?    @db.Text
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  recommendations Recommendation[]
+
+  @@map("source")
+}
+
+enum SourceType {
+  BOOK
+  WEBSITE
+  EXPERT
+  JOURNAL
+  OTHER
 }

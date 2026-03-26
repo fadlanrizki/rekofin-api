@@ -10,9 +10,3 @@ export type TEditFact = {
   description: string;
   question: string;
 };
-
-export type TGetListFact = {
-  page: string;
-  limit: string;
-  search: string;
-};

@@ -18,7 +18,7 @@ export class RecommendationService {
         conclusionId: validRequest.conclusionId,
         title: validRequest.title,
         content: validRequest.content,
-        source: validRequest.source,
+        sourceId: validRequest.sourceId,
       },
     });
   }
@@ -40,7 +40,7 @@ export class RecommendationService {
         conclusionId: selectedConclusion.id,
         title: validRequest.title,
         content: validRequest.content,
-        source: validRequest.source,
+        sourceId: validRequest.sourceId,
       },
       where: {
         id: validRequest.id,
@@ -60,7 +60,7 @@ export class RecommendationService {
           isActive: true,
           OR: [
             { title: { contains: search } },
-            { source: { contains: search } },
+            { source: { title: { contains: search } } },
           ],
         }
       : { isActive: true };
@@ -72,9 +72,16 @@ export class RecommendationService {
       include: {
         conclusion: {
           select: {
-            category: true
+            category: true,
+            description: true,
+            code: true,
           }
         },
+        source: {
+          select: {
+            title: true,
+          }
+        }
       },
     });
 
@@ -111,7 +118,12 @@ export class RecommendationService {
       },
       include: {
         conclusion: {
-          select: { id: true },
+          select: { id: true, code: true, description: true },
+        },
+        source: {
+          select: {
+            id: true
+          },
         },
       },
     });
