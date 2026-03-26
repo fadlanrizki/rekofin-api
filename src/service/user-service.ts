@@ -1,7 +1,7 @@
 import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
 import { TGetList } from "../types/api/common";
-import { TCreateUser } from "../types/api/user";
+import { TChangePassword, TCreateUser, TUpdateProfile } from "../types/api/user";
 import bcrypt from "bcryptjs";
 
 export class UserService {
@@ -112,6 +112,107 @@ export class UserService {
       data: {
         isActive: false,
       },
+    });
+  }
+
+  static async getProfile(req: any): Promise<any> {
+    const id = req.user.id;
+    const selectedId = parseInt(id);
+
+    const selectCountRule = await prismaClient.user.count({
+      where: {
+        id: selectedId,
+      },
+    });
+
+    if (selectCountRule === 0) {
+      throw new ResponseError(400, `Data user with ID : ${id} is not found.`);
+    }
+
+    return await prismaClient.user.findUnique({
+      where: {
+        id: selectedId,
+      },
+      select: {
+        id: true,
+        fullname: true,
+        username: true,
+        email: true,
+        role: true,
+        gender: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  static async updateProfile(req: any): Promise<any> {
+    const id = req.user.id;
+    const selectedId = parseInt(id);
+    const request = req.body as unknown as TUpdateProfile;
+
+    const selectCountUser = await prismaClient.user.findUnique({
+      where: {
+        id: selectedId,
+      },
+    });
+
+    if (!selectCountUser) {
+      throw new ResponseError(400, `Data user with ID : ${id} is not found.`);
+    }
+
+    if (request.username || request.email) {
+      const selectCountUser = await prismaClient.user.count({
+        where: {
+          id: { not: selectedId },
+          OR: [{ username: request.username }, { email: request.email }],
+        },
+      });
+
+      if (selectCountUser > 0) {
+        throw new ResponseError(
+          400,
+          `Data user with username : ${request.username} or email : ${request.email} is already exists.`,
+        );
+      }
+
+      return await prismaClient.user.update({
+        where: {
+          id: selectedId,
+        },
+        data: {
+          fullname: request.fullname,
+          username: request.username,
+          email: request.email,
+          gender: request.gender || null,
+        },
+      });
+    }
+  }
+
+  static async changePassword(req: any): Promise<any> {
+    const id = req.user.id;
+    const selectedId = parseInt(id);
+    const request = req.body as unknown as TChangePassword;
+
+    const user = await prismaClient.user.findUnique({
+      where: { id: selectedId },
+    });
+
+    if (!user) {
+      throw new ResponseError(400, `Data user with ID : ${id} is not found.`);
+    }
+
+    const isMatch = await bcrypt.compare(request.old_password, user.password);
+    if (!isMatch) {
+      throw new ResponseError(400, `Old password is incorrect.`);
+    }
+
+    const hashedPassword = await bcrypt.hash(request.password, 10);
+
+    await prismaClient.user.update({
+      where: { id: selectedId },
+      data: { password: hashedPassword },
     });
   }
 }

@@ -8,3 +8,16 @@ export type TCreateUser = {
   role: Role;
   gender: Gender;
 };
+
+export type TUpdateProfile = {
+  fullname?: string;
+  username?: string;
+  email?: string;
+  gender?: Gender
+  occupation?: string;
+};
+
+export type TChangePassword = {
+  password: string;
+  old_password: string;
+};

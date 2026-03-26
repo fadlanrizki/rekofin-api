@@ -19,7 +19,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRouter);
-app.use("/api/admin/users", adminAuth, userRouter);
+app.use("/api", userRouter);
 app.use("/api/admin/facts", adminAuth, factRouter);
 app.use("/api/admin/recommendations", adminAuth, recommendationRouter);
 app.use("/api/admin/conclusions", adminAuth, conclusionRouter);
