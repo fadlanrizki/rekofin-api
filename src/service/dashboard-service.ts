@@ -1,6 +1,15 @@
 import { prismaClient } from "../application/database";
 import { ConsultationStatus } from "../generated/prisma";
-import { getCountOfWeeklyDataChart, getCurrentWeekRange } from "../utils/date";
+
+type TConsultationResultCategory = {
+  category: string;
+  value: number;
+};
+
+type TConsultationResultByMonth = {
+  category: string;
+  value: Array<number | null>;
+};
 
 type TRecommendation = {
   id: number;
@@ -38,56 +47,91 @@ export class DashboardService {
     });
 
     const totalConsultation = await prismaClient.consultation.count();
-
-    const totalConsultationComplete = await prismaClient.consultation.count({
-      where: { status: ConsultationStatus.COMPLETED },
-    });
-
-    const totalConsultationInProgress = await prismaClient.consultation.count({
-      where: { status: ConsultationStatus.IN_PROGRESS },
-    });
-
     const totalFact = await prismaClient.fact.count({
       where: { isActive: true },
     });
-
     const totalRule = await prismaClient.rule.count({
       where: { isActive: true },
     });
 
-    const { monday, sunday } = getCurrentWeekRange();
-
-    const numberOfWeeklyConsultationChart =
-      await prismaClient.consultation.findMany({
-        select: {
-          startedAt: true,
+    const consultationResultData =
+      await prismaClient.consultationConclusion.findMany({
+        where: {
+          consultation: {
+            status: ConsultationStatus.COMPLETED,
+            endedAt: {
+              not: null,
+            },
+          },
         },
-        where: { startedAt: { gte: monday, lte: sunday } },
+        select: {
+          consultation: {
+            select: {
+              endedAt: true,
+            },
+          },
+          conclusion: {
+            select: {
+              category: true,
+            },
+          },
+        },
       });
 
-    const formattedListConsultation = getCountOfWeeklyDataChart(
-      numberOfWeeklyConsultationChart.map((item) => item.startedAt),
-    );
+    const categoryCountMap = new Map<string, number>();
+    const categoryMonthlyMap = new Map<string, Array<number | null>>();
+    const currentMonthIndex = new Date().getMonth();
+
+    const getInitialMonthlyValues = (): Array<number | null> =>
+      Array.from({ length: 12 }, (_, monthIndex) =>
+        monthIndex <= currentMonthIndex ? 0 : null,
+      );
+
+    for (const item of consultationResultData) {
+      const category = item.conclusion.category;
+      const endedAt = item.consultation.endedAt;
+
+      categoryCountMap.set(category, (categoryCountMap.get(category) ?? 0) + 1);
+
+      if (!categoryMonthlyMap.has(category)) {
+        categoryMonthlyMap.set(category, getInitialMonthlyValues());
+      }
+
+      if (endedAt) {
+        const monthIndex = endedAt.getMonth();
+        const monthlyValue = categoryMonthlyMap.get(category)!;
+        const currentValue = monthlyValue[monthIndex] ?? 0;
+        monthlyValue[monthIndex] = currentValue + 1;
+      }
+    }
+
+    const consultationResultCategories: TConsultationResultCategory[] =
+      Array.from(categoryCountMap.entries())
+        .map(([category, value]) => ({
+          category,
+          value,
+        }))
+        .sort(
+          (a, b) => b.value - a.value || a.category.localeCompare(b.category),
+        );
+
+    const consultationResultByMonth: TConsultationResultByMonth[] =
+      consultationResultCategories.map(({ category }) => ({
+        category,
+        value: categoryMonthlyMap.get(category) ?? getInitialMonthlyValues(),
+      }));
 
     const response = {
-      count: {
-        user: totalUser,
-        rule: totalRule,
-        fact: totalFact,
-        consultation: totalConsultation,
-        complete_consultation: totalConsultationComplete,
-        inprogress_consultation: totalConsultationInProgress,
+      dashboard: {
+        total_user: totalUser,
+        total_rule: totalRule,
+        total_fact: totalFact,
+        total_consultation: totalConsultation,
       },
-      number_of_weekly_consultation_chart: {
-        data: formattedListConsultation,
+      chart: {
+        consultation_result_categories: consultationResultCategories,
+        consultation_result_by_month: consultationResultByMonth,
       },
-      consultation_result_chart: {
-        data: [],
-      },
-      fulfilled_rule_chart: {
-        data: [],
-      },
-      last_consultation_list: [],
     };
 
     return response;
