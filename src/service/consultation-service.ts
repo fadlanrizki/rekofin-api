@@ -246,28 +246,34 @@ export class ConsultationService {
       userId: userId,
     };
 
-    const consultations = await prismaClient.consultation.findMany({
-      orderBy: { startedAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-      where: searchCondition,
-      include: {
-        conclusions: {
-          include: {
-            conclusion: {
-              select: {
-                id: true,
-                code: true,
-                description: true,
-                category: true,
+    const [total, consultations] = await prismaClient.$transaction([
+      prismaClient.consultation.count({ where: searchCondition }),
+      prismaClient.consultation.findMany({
+        orderBy: { startedAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+        where: searchCondition,
+        include: {
+          conclusions: {
+            include: {
+              conclusion: {
+                select: {
+                  id: true,
+                  code: true,
+                  description: true,
+                  category: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      }),
+    ]);
 
-    return consultations;
+    return {
+      consultations,
+      total,
+    };
   }
 
   static async getUserConsultationStatus(req: any): Promise<any> {
