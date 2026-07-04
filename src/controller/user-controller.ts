@@ -47,14 +47,14 @@ export class UserController {
     }
   }
 
-  static async delete(req: Request, res: Response, next: NextFunction) {
+  static async changeStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params?.id;
-      const data = await UserService.softDelete(id);
+      const data = await UserService.changeStatus(id);
       res.status(200).json({
         ok: true,
         data,
-        message: `Berhasil menghapus data user`,
+        message: `Berhasil mengubah status data user`,
       });
     } catch (error) {
       next(error);

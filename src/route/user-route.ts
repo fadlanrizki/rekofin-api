@@ -14,7 +14,7 @@ userRouter.post(
 );
 userRouter.post("/admin/users/", adminAuth, UserController.create);
 userRouter.get("/admin/users/:id", adminAuth, UserController.findById);
-userRouter.delete("/admin/users/:id", adminAuth, UserController.delete);
+userRouter.patch("/admin/users/:id", adminAuth, UserController.changeStatus);
 
 // user routes
 userRouter.get("/user/profile", userAuth, UserController.getProfile);

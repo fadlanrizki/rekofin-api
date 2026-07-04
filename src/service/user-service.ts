@@ -1,7 +1,11 @@
 import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
 import { TGetList } from "../types/api/common";
-import { TChangePassword, TCreateUser, TUpdateProfile } from "../types/api/user";
+import {
+  TChangePassword,
+  TCreateUser,
+  TUpdateProfile,
+} from "../types/api/user";
 import bcrypt from "bcryptjs";
 
 export class UserService {
@@ -20,12 +24,22 @@ export class UserService {
             { username: { contains: search } },
           ],
         }
-      : { isActive: true };
+      : {};
 
     const data = await prismaClient.user.findMany({
       skip: (page - 1) * limit,
       take: limit,
       where: searchCondition,
+      select: {
+        id: true,
+        fullname: true,
+        username: true,
+        email: true,
+        role: true,
+        gender: true,
+        isActive: true,
+        createdAt: true,
+      },
     });
 
     const total = await prismaClient.user.count({
@@ -92,7 +106,7 @@ export class UserService {
     });
   }
 
-  static async softDelete(id: string): Promise<any> {
+  static async changeStatus(id: string): Promise<any> {
     const selectedId = parseInt(id);
 
     const selectCountUser = await prismaClient.user.findUnique({
@@ -110,7 +124,12 @@ export class UserService {
         id: selectedId,
       },
       data: {
-        isActive: false,
+        isActive: !selectCountUser.isActive,
+      },
+      select: {
+        id: true,
+        fullname: true,
+        isActive: true,
       },
     });
   }
