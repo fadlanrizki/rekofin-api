@@ -56,6 +56,7 @@ model Fact {
   code        String   @unique
   description String   @db.Text
   question    String
+  fact        String   @default("")
   createdAt   DateTime @default(now())
   isActive    Boolean  @default(true)
 

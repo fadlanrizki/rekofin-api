@@ -2,6 +2,7 @@ export type TAddFact = {
   code: string;
   description: string;
   question: string;
+  fact: string;
 };
 
 export type TEditFact = {
@@ -9,4 +10,5 @@ export type TEditFact = {
   code: string;
   description: string;
   question: string;
+  fact: string;
 };
