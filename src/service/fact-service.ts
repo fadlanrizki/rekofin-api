@@ -11,6 +11,7 @@ export class FactService {
         code: validRequest.code,
         description: validRequest.description,
         question: validRequest.question,
+        fact: validRequest.fact,
       },
     });
   }
@@ -23,6 +24,7 @@ export class FactService {
         code: validRequest.code,
         description: validRequest.description,
         question: validRequest.question,
+        fact: validRequest.fact,
       },
       where: {
         id: validRequest.id,
@@ -40,8 +42,10 @@ export class FactService {
     const searchCondition = search
       ? {
           OR: [
-            { title: { contains: search } },
+            { code: { contains: search } },
             { description: { contains: search } },
+            { question: { contains: search } },
+            { fact: { contains: search } },
           ],
           isActive: true,
         }

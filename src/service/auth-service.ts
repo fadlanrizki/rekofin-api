@@ -26,6 +26,7 @@ export class AuthService {
         id: true,
         username: true,
         password: true,
+        isActive: true,
       },
     });
 
@@ -40,6 +41,10 @@ export class AuthService {
 
     if (user.username !== loginRequest.credential || !validPassword) {
       throw new ResponseError(400, "Invalid Username Or Password");
+    }
+
+    if (user.isActive === false) {
+      throw new ResponseError(400, "User is not active, please contact admin");
     }
 
     const selectedUser = await prismaClient.user.findUnique({
