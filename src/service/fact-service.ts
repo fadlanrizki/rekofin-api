@@ -74,13 +74,13 @@ export class FactService {
       select: {
         id: true,
         code: true,
-        description: true,
+        fact: true,
       },
     });
 
     const formattedData = data.map((item) => ({
       id: item.id,
-      label: `${item.code} - ${item.description}`,
+      label: `${item.code} - ${item.fact}`,
     }));
 
     return formattedData;

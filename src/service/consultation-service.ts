@@ -226,7 +226,7 @@ export class ConsultationService {
       consultationId,
       facts: consultation.answers.map((a) => ({
         code: a.fact.code,
-        question: a.fact.question,
+        fact: a.fact.fact,
       })),
       conclusions: consultation.conclusions.map((c) => c.conclusion),
     };

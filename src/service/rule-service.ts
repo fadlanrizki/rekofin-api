@@ -37,6 +37,7 @@ export class RuleService {
         data: {
           name: validRequest.name,
           description: validRequest.description,
+          priority: validRequest.priority ?? 0,
           isActive: true,
           createdBy: createdBy,
         },
@@ -105,6 +106,7 @@ export class RuleService {
         data: {
           name: validRequest.name,
           description: validRequest.description,
+          priority: validRequest.priority ?? 0,
         },
         where: {
           id: validRequest.id,
@@ -199,6 +201,7 @@ export class RuleService {
       id: rule.id,
       name: rule.name,
       description: rule.description,
+      priority: rule.priority,
       isActive: rule.isActive,
       createdAt: rule.createdAt,
       conditions: rule.ruleConditions.map((rc) => rc.fact),
@@ -289,6 +292,9 @@ export class RuleService {
     }
 
     const selectedRule: any = await prismaClient.rule.findFirst({
+      where: {
+        id: selectedId,
+      },
       include: {
         ruleConditions: {
           include: {
@@ -296,7 +302,7 @@ export class RuleService {
               select: {
                 id: true,
                 code: true,
-                description: true,
+                fact: true,
               },
             },
           },
@@ -319,11 +325,14 @@ export class RuleService {
       id: selectedRule.id,
       name: selectedRule.name,
       description: selectedRule.description,
+      priority: selectedRule.priority,
       isActive: selectedRule.isActive,
       createdAt: selectedRule.createdAt,
       conditions: selectedRule.ruleConditions.map((rc: any) => rc.fact),
       conclusions: selectedRule.ruleResults.map((rr: any) => rr.conclusion),
     };
+
+    console.log(JSON.stringify(data));
 
     return data;
   }

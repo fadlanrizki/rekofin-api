@@ -1,14 +1,20 @@
 ## Data Kesimpulan
 
-| No  | Kode Kesimpulan | Kesimpulan                          |
-| --- | --------------- | ----------------------------------- |
-| 1   | C001            | Memahami Kebiasaan Belanja          |
-| 2   | C002            | Menyusun Rencana Keuangan Pribadi   |
-| 3   | C003            | Mulai Menabung                      |
-| 4   | C004            | Mengelola Utang Dengan Bijak        |
-| 5   | C005            | Memilih Produk Keuangan Yang Tepat  |
-| 6   | C006            | Mulai Berinvestasi Untuk Masa Depan |
-| 7   | C007            | Mengelola Risiko Keuangan           |
+| No  | Kode Kesimpulan | Kesimpulan                                                  |
+| --- | --------------- | ----------------------------------------------------------- |
+| 1   | C001            | Memahami Kebiasaan Belanja                                  |
+| 2   | C002            | Menyusun Rencana Keuangan Pribadi                           |
+| 3   | C003            | Mulai Menabung                                              |
+| 4   | C004            | Mengelola Utang Dengan Bijak                                |
+| 5   | C005            | Memilih Produk Keuangan Yang Tepat                          |
+| 6   | C006            | Mulai Berinvestasi Untuk Masa Depan                         |
+| 7   | C007            | Mengelola Risiko Keuangan                                   |
+| 8   | C008            | Investasi untuk profil risiko aggressive                    |
+| 9   | C009            | Investasi untuk profil risiko moderat                       |
+| 10  | C010            | Investasi untuk profil risiko conservative                  |
+| 11  | C011            | Investasi untuk profil risiko aggressive kategori syariah   |
+| 12  | C012            | Investasi untuk profil risiko moderat kategori syariah      |
+| 13  | C013            | Investasi untuk profil risiko conservative kategori syariah |
 
 ## Data Fakta
 
@@ -29,6 +35,13 @@
 ## Catatan Aturan Forward Chaining
 
 - F001 sampai F007 merupakan fakta pemicu utama untuk menghasilkan kesimpulan C001 sampai C007 secara langsung.
-- F008, F009, dan F010 merupakan fakta profil risiko yang berfungsi sebagai konteks pendukung untuk personalisasi rekomendasi, bukan sebagai hasil utama.
-- F011 merupakan fakta preferensi syariah yang dapat digunakan sebagai konteks tambahan pada rekomendasi produk dan investasi agar sesuai prinsip syariah.
-- Dalam skema inferensi, setiap fakta yang bernilai `Y`/`true` pada F001-F007 dapat memicu satu kesimpulan yang bersesuaian.
+- F008, F009, dan F010 merupakan fakta profil risiko (`Aggressive`, `Moderat`, `Conservative`) yang dapat dipakai untuk menghasilkan conclusion spesifik pada tahap investasi.
+- F011 merupakan fakta preferensi syariah yang dapat dipakai sebagai penguat konteks rekomendasi produk dan investasi agar sesuai prinsip syariah.
+- Ketika user sudah berada pada tahap investasi, maka kombinasi fakta profil risiko dan syariah dapat memicu kesimpulan spesifik berikut:
+  - `F008` → `C008`
+  - `F009` → `C009`
+  - `F010` → `C010`
+  - `F008 AND F011` → `C011`
+  - `F009 AND F011` → `C012`
+  - `F010 AND F011` → `C013`
+- Dalam skema inferensi, setiap fakta yang bernilai `Y`/`true` pada F001-F007 tetap dapat memicu satu kesimpulan yang bersesuaian. Untuk F008-F011, kesimpulan baru akan muncul bila fakta-fakta tersebut digabungkan dalam rule yang spesifik.

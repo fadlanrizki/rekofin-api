@@ -3,36 +3,44 @@ skinparam shadowing false
 skinparam monochrome true
 skinparam defaultTextAlignment center
 
-title Pohon Keputusan Prioritas Keuangan (Satu Keputusan)
-
 * Mulai Konsultasi
-** Cek F001
-*** Ya --> C001: Memahami Kebiasaan Belanja
-*** Tidak --> Cek F002
-** Cek F002
-*** Ya --> C002: Menyusun Rencana Keuangan Pribadi
-*** Tidak --> Cek F003
-** Cek F003
-*** Ya --> C003: Mulai Menabung
-*** Tidak --> Cek F004
-** Cek F004
-*** Ya --> C004: Mengelola Utang Dengan Bijak
-*** Tidak --> Cek F005
-** Cek F005
-*** Ya --> C005: Memilih Produk Keuangan Yang Tepat
-*** Tidak --> Cek F007
-** Cek F007
-*** Ya --> C006: Mulai Berinvestasi Untuk Masa Depan
-*** Tidak --> Cek F006
-** Cek F006
-*** Ya --> C007: Mengelola Risiko Keuangan
-*** Tidak --> Tidak ada keputusan prioritas utama
+** F001
+*** Ya --> C001
+*** Tidak --> F002
+** F002
+*** Ya --> C002
+*** Tidak --> F003
+** F003
+*** Ya --> C003
+*** Tidak --> F004
+** F004
+*** Ya --> C004
+*** Tidak --> F005
+** F005
+*** Ya --> C005
+*** Tidak --> F007
+** F007
+*** Ya --> C006
+*** Tidak --> F006
+** F006
+*** Ya --> C007
+*** Tidak --> Tahap Investasi
+**** F008
+***** Ya --> C008: Investasi untuk profil risiko aggressive
+***** Tidak --> F009
+**** F009
+***** Ya --> C009: Investasi untuk profil risiko moderat
+***** Tidak --> F010
+**** F010
+***** Ya --> C010: Investasi untuk profil risiko conservative
+***** Tidak --> Tidak ada keputusan investasi utama
 
 left side
 
-* Konteks Tambahan
-** F008 = Profil Risiko Aggressive
-** F009 = Profil Risiko Moderat
-** F010 = Profil Risiko Conservative
-** F011 = Prinsip Finansial Syariah
+* Konteks Syariah
+** F011
+*** Ya --> C011: Investasi agresive + syariah
+*** Ya --> C012: Investasi moderat + syariah
+*** Ya --> C013: Investasi conservative + syariah
+*** Tidak --> Rekomendasi non-syariah
 @endmindmap
