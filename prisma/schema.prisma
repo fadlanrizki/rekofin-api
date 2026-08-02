@@ -101,6 +101,7 @@ model Rule {
   name        String
   description String  @db.Text
   isActive    Boolean @default(true)
+  priority    Int     @default(0)
 
   createdBy Int
   creator   User @relation("RuleCreatedBy", fields: [createdBy], references: [id])

@@ -46,6 +46,42 @@ export class ConsultationService {
     return facts;
   }
 
+  // New priority-based chaining logic.
+  // This method returns only the first matched rule result in priority order,
+  // so the consultation ends with exactly one final conclusion.
+  static async runPriorityChaining(factIds: number[]): Promise<number | null> {
+    const rules = await prismaClient.rule.findMany({
+      where: { isActive: true },
+      orderBy: [{ priority: "asc" }, { id: "asc" }],
+      include: {
+        ruleConditions: true,
+        ruleResults: true,
+      },
+    });
+
+    for (const rule of rules) {
+      const conditionFactIds = rule.ruleConditions.map(
+        (ruleCondition) => ruleCondition.factId,
+      );
+
+      const isMatch = conditionFactIds.every((factId) =>
+        factIds.includes(factId),
+      );
+
+      if (isMatch) {
+        const [ruleResult] = rule.ruleResults;
+        if (ruleResult) {
+          return ruleResult.conclusionId;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  // Legacy logic for multi-conclusion mode.
+  // If you want to restore the old behavior, change the submitConsultationAnswer
+  // flow to call runForwardChaining() and keep the array-based createMany() logic.
   static async runForwardChaining(factIds: number[]): Promise<any> {
     const rules = await prismaClient.rule.findMany({
       where: { isActive: true },
@@ -109,15 +145,17 @@ export class ConsultationService {
           .filter((a: any) => a.value === true)
           .map((a: any) => a.factId);
 
-        // Forward chaining
-        const conclusionIds = await this.runForwardChaining(trueFacts);
+        // New priority-based chaining: return only one final conclusion.
+        // This supports the "single decision according to priority order" rule.
+        const conclusionId = await this.runPriorityChaining(trueFacts);
+        const conclusionIds = conclusionId !== null ? [conclusionId] : [];
 
         // save conclusion
         if (conclusionIds.length > 0) {
           await tx.consultationConclusion.createMany({
-            data: conclusionIds.map((conclusionId: number) => ({
+            data: conclusionIds.map((finalConclusionId: number) => ({
               consultationId,
-              conclusionId: conclusionId,
+              conclusionId: finalConclusionId,
             })),
           });
         }
