@@ -23,9 +23,9 @@ Karena pada data penelitian setiap fakta utama memiliki korespondensi satu-satu 
 | 8   | R008        | IF F008 THEN C008          | 8         |
 | 9   | R009        | IF F009 THEN C009          | 9         |
 | 10  | R010        | IF F010 THEN C010          | 10        |
-| 11  | R011        | IF F008 AND F011 THEN C011 | 11        |
-| 12  | R012        | IF F009 AND F011 THEN C012 | 12        |
-| 13  | R013        | IF F010 AND F011 THEN C013 | 13        |
+| 11  | R011        | IF F008 AND F011 THEN C011 | 8         |
+| 12  | R012        | IF F009 AND F011 THEN C012 | 9         |
+| 13  | R013        | IF F010 AND F011 THEN C013 | 10        |
 
 ## 3. Interpretasi Kode
 
@@ -48,4 +48,4 @@ Karena pada data penelitian setiap fakta utama memiliki korespondensi satu-satu 
 - F008, F009, dan F010 adalah fakta profil risiko (`Aggressive`, `Moderat`, `Conservative`) yang dapat membentuk kesimpulan spesifik pada tahap investasi.
 - F011 (`Prinsip Finansial Syariah`) berfungsi sebagai penguat konteks agar rekomendasi produk dan investasi tetap sesuai prinsip syariah.
 - Pada data `survey.md`, pola `Y` pada fakta utama memang secara konsisten menunjukkan kebutuhan rekomendasi terhadap kesimpulan yang sesuai.
-- Dalam implementasi `priority-first`, rule yang lebih umum (`F001` sampai `F010`) harus diproses terlebih dahulu, sedangkan rule investasi spesifik (`F008 AND F011`, `F009 AND F011`, `F010 AND F011`) diletakkan di akhir karena mereka merepresentasikan tahap lanjut setelah user sudah masuk ke fase investasi. Dengan kata lain, `R011-R013` diprioritaskan terakhir agar hasil keputusan tetap mengikuti alur fase perencanaan dan pengelolaan keuangan sebelum masuk ke konteks investasi spesifik.
+- Dalam implementasi saat ini, aturan diproses berdasarkan prioritas: nilai prioritas yang lebih kecil diproses lebih dulu. Untuk kasus yang memiliki lebih dari satu rule yang cocok, sistem akan memilih rule yang paling spesifik, yaitu rule dengan jumlah kondisi paling banyak. Karena `R011-R013` diberi prioritas lebih tinggi dibandingkan pasangan profil risikonya (`R008-R010`), maka jika fakta `F011` dan profil risiko tersedia, kesimpulan syariah spesifik dapat dipilih lebih dulu.

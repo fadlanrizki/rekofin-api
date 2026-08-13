@@ -332,8 +332,6 @@ export class RuleService {
       conclusions: selectedRule.ruleResults.map((rr: any) => rr.conclusion),
     };
 
-    console.log(JSON.stringify(data));
-
     return data;
   }
 }

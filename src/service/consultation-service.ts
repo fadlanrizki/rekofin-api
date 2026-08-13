@@ -3,6 +3,39 @@ import { ResponseError } from "../error/response-error";
 import { ConsultationStatus } from "../generated/prisma";
 import { TGetList } from "../types/api/common";
 export class ConsultationService {
+  static selectBestMatchedRule(rules: any[], factIds: number[]): number | null {
+    const matchedRules = rules.filter((rule) => {
+      const conditionFactIds = rule.ruleConditions.map(
+        (ruleCondition: any) => ruleCondition.factId,
+      );
+
+      return conditionFactIds.every((factId: number) =>
+        factIds.includes(factId),
+      );
+    });
+
+    if (matchedRules.length === 0) {
+      return null;
+    }
+
+    matchedRules.sort((a, b) => {
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority;
+      }
+
+      if (a.ruleConditions.length !== b.ruleConditions.length) {
+        return b.ruleConditions.length - a.ruleConditions.length;
+      }
+
+      return a.id - b.id;
+    });
+
+    const [bestRule] = matchedRules;
+    const [ruleResult] = bestRule.ruleResults;
+
+    return ruleResult?.conclusionId ?? null;
+  }
+
   static async startConsultation(req: any): Promise<any> {
     const userId = req.user.id;
 
@@ -59,24 +92,7 @@ export class ConsultationService {
       },
     });
 
-    for (const rule of rules) {
-      const conditionFactIds = rule.ruleConditions.map(
-        (ruleCondition) => ruleCondition.factId,
-      );
-
-      const isMatch = conditionFactIds.every((factId) =>
-        factIds.includes(factId),
-      );
-
-      if (isMatch) {
-        const [ruleResult] = rule.ruleResults;
-        if (ruleResult) {
-          return ruleResult.conclusionId;
-        }
-      }
-    }
-
-    return null;
+    return this.selectBestMatchedRule(rules, factIds);
   }
 
   // Legacy logic for multi-conclusion mode.
