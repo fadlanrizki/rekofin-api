@@ -128,6 +128,137 @@ export class ConsultationService {
     return Array.from(matchedConclusions);
   }
 
+  static getComparisonConclusionCategory(data: any): string | null {
+    const conclusion = data?.conclusions?.[0];
+
+    if (!conclusion) {
+      return null;
+    }
+
+    if (typeof conclusion === "string") {
+      return conclusion;
+    }
+
+    return conclusion.category ?? conclusion?.conclusion?.category ?? null;
+  }
+
+  static mapConsultationComparisonData(consultation: any): any | null {
+    if (!consultation) {
+      return null;
+    }
+
+    return {
+      consultationId: consultation.id,
+      facts: (consultation.answers ?? []).map((answer: any) => ({
+        code: answer.fact?.code,
+        question: answer.fact?.question,
+        fact: answer.fact?.fact,
+      })),
+      conclusions: (consultation.conclusions ?? []).map((item: any) => {
+        const conclusion = item.conclusion ?? item;
+
+        return {
+          id: conclusion.id,
+          code: conclusion.code,
+          description: conclusion.description,
+          category: conclusion.category,
+          createdAt: conclusion.createdAt,
+          isActive: conclusion.isActive,
+          recommendations: (conclusion.recommendations ?? []).map(
+            (recommendation: any) => ({
+              id: recommendation.id,
+              title: recommendation.title,
+              content: recommendation.content,
+              sourceId: recommendation.sourceId,
+              createdAt: recommendation.createdAt,
+              isActive: recommendation.isActive,
+              conclusionId: recommendation.conclusionId,
+            }),
+          ),
+        };
+      }),
+    };
+  }
+
+  static buildComparisonPayload(before: any, after: any, note?: string): any {
+    const beforeConclusion = this.getComparisonConclusionCategory(before);
+    const afterConclusion = this.getComparisonConclusionCategory(after);
+
+    return {
+      before: before ?? null,
+      after: after ?? null,
+      note:
+        note ??
+        `Perbandingan hasil konsultasi dari ${beforeConclusion ?? "sesi sebelumnya"} ke ${afterConclusion ?? "konsultasi terbaru"}.`,
+      savedAt: new Date().toISOString(),
+    };
+  }
+
+  static async saveComparisonForConsultation(
+    tx: any,
+    consultationId: number,
+    userId: number,
+    customData?: { before?: any; after?: any; note?: string },
+  ): Promise<any | null> {
+    const currentConsultation = await tx.consultation.findFirst({
+      where: { id: consultationId, userId },
+      include: {
+        answers: {
+          where: { value: true },
+          include: { fact: true },
+        },
+        conclusions: {
+          include: { conclusion: true },
+        },
+      },
+    });
+
+    if (!currentConsultation) {
+      return null;
+    }
+
+    const previousConsultation = await tx.consultation.findFirst({
+      where: {
+        userId,
+        status: ConsultationStatus.COMPLETED,
+        id: { not: consultationId },
+      },
+      orderBy: { endedAt: "desc" },
+      include: {
+        answers: {
+          where: { value: true },
+          include: { fact: true },
+        },
+        conclusions: {
+          include: { conclusion: true },
+        },
+      },
+    });
+
+    const beforeData =
+      customData?.before ??
+      this.mapConsultationComparisonData(previousConsultation);
+
+    const afterData =
+      customData?.after ??
+      this.mapConsultationComparisonData(currentConsultation);
+
+    const comparisonPayload = this.buildComparisonPayload(
+      beforeData,
+      afterData,
+      customData?.note,
+    );
+
+    await tx.consultation.update({
+      where: { id: consultationId },
+      data: {
+        comparisonNote: JSON.stringify(comparisonPayload),
+      },
+    });
+
+    return comparisonPayload;
+  }
+
   static async submitConsultationAnswer(req: any): Promise<any> {
     const consultationId = Number(req.params.id);
     const userId = req.user.id;
@@ -147,7 +278,6 @@ export class ConsultationService {
           throw new Error("ALREADY_COMPLETED");
         }
 
-        // save answer
         await tx.consultationAnswer.createMany({
           data: answers.map((a: any) => ({
             consultationId,
@@ -156,17 +286,13 @@ export class ConsultationService {
           })),
         });
 
-        // get true fact
         const trueFacts = answers
           .filter((a: any) => a.value === true)
           .map((a: any) => a.factId);
 
-        // New priority-based chaining: return only one final conclusion.
-        // This supports the "single decision according to priority order" rule.
         const conclusionId = await this.runPriorityChaining(trueFacts);
         const conclusionIds = conclusionId !== null ? [conclusionId] : [];
 
-        // save conclusion
         if (conclusionIds.length > 0) {
           await tx.consultationConclusion.createMany({
             data: conclusionIds.map((finalConclusionId: number) => ({
@@ -176,7 +302,6 @@ export class ConsultationService {
           });
         }
 
-        // Update status
         await tx.consultation.update({
           where: { id: consultationId },
           data: {
@@ -185,13 +310,23 @@ export class ConsultationService {
           },
         });
 
-        return conclusionIds;
+        const comparisonData = await this.saveComparisonForConsultation(
+          tx,
+          consultationId,
+          userId,
+        );
+
+        return {
+          conclusionIds,
+          comparison: comparisonData,
+        };
       });
 
       const response = {
         consultationId,
         status: "COMPLETED",
-        conclusionIds: result,
+        conclusionIds: result.conclusionIds,
+        comparison: result.comparison,
       };
 
       return response;
@@ -205,6 +340,46 @@ export class ConsultationService {
 
       throw new ResponseError(500, `Failed to Process Consultation`);
     }
+  }
+
+  static async saveComparisonNote(req: any): Promise<any> {
+    const consultationId = Number(req.params.id);
+    const userId = req.user.id;
+    const { before, after, note } = req.body ?? {};
+
+    if (!before && !after && !note) {
+      throw new ResponseError(
+        400,
+        "Data perbandingan sebelum, sesudah, atau catatan wajib diisi.",
+      );
+    }
+
+    const consultation = await prismaClient.consultation.findFirst({
+      where: { id: consultationId, userId },
+      select: { id: true },
+    });
+
+    if (!consultation) {
+      throw new ResponseError(404, `Consultation is not found.`);
+    }
+
+    const comparisonData = this.buildComparisonPayload(
+      before ?? null,
+      after ?? null,
+      note,
+    );
+
+    await prismaClient.consultation.update({
+      where: { id: consultationId },
+      data: {
+        comparisonNote: JSON.stringify(comparisonData),
+      },
+    });
+
+    return {
+      consultationId,
+      comparison: comparisonData,
+    };
   }
 
   static async getConsultationResult(req: any): Promise<any> {
@@ -238,6 +413,10 @@ export class ConsultationService {
       throw new ResponseError(400, "consultation has not yet been completed.");
     }
 
+    const comparison = consultation.comparisonNote
+      ? JSON.parse(consultation.comparisonNote)
+      : null;
+
     const response = {
       consultationId,
       facts: consultation.answers.map((a) => ({
@@ -245,6 +424,7 @@ export class ConsultationService {
         fact: a.fact.fact,
       })),
       conclusions: consultation.conclusions.map((c) => c.conclusion),
+      comparison,
     };
 
     return response;
@@ -276,13 +456,17 @@ export class ConsultationService {
       throw new ResponseError(404, `Consultation is not found.`);
     }
 
+    const comparison = consultation.comparisonNote
+      ? JSON.parse(consultation.comparisonNote)
+      : null;
+
     const response = {
-      consultationId: consultation.id,
-      facts: consultation.answers.map((a) => ({
-        code: a.fact.code,
-        question: a.fact.question,
-      })),
-      conclusions: consultation.conclusions.map((c) => c.conclusion),
+      comparison: {
+        before: comparison?.before ?? null,
+        after: comparison?.after ?? null,
+      },
+      note: comparison?.note ?? null,
+      savedAt: comparison?.savedAt ?? null,
     };
 
     return response;

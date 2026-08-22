@@ -11,6 +11,10 @@ consultationRouter.post(
   "/:id/answers",
   ConsultationController.submitConsultationAnswer,
 );
+consultationRouter.post(
+  "/:id/comparison",
+  ConsultationController.saveConsultationComparison,
+);
 consultationRouter.get(
   "/:id/result",
   ConsultationController.getConsultationResult,

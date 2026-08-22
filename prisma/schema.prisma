@@ -149,11 +149,12 @@ model RuleResult {
 ////////////////////////////////////////////////////
 
 model Consultation {
-  id        Int                @id @default(autoincrement())
-  userId    Int
-  status    ConsultationStatus @default(IN_PROGRESS)
-  startedAt DateTime           @default(now())
-  endedAt   DateTime?
+  id             Int                @id @default(autoincrement())
+  userId         Int
+  status         ConsultationStatus @default(IN_PROGRESS)
+  startedAt      DateTime           @default(now())
+  endedAt        DateTime?
+  comparisonNote String?            @db.Text
 
   user User @relation(fields: [userId], references: [id])
 

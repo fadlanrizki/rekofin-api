@@ -6,85 +6,63 @@ Dokumen ini menjelaskan bentuk normalisasi dari struktur database pada [prisma/s
 
 Entitas utama yang ada di schema:
 
-- `User`
-- `Fact`
-- `Conclusion`
-- `Recommendation`
-- `Rule`
-- `Source`
-- `Consultation`
+- User
+- Fact
+- Conclusion
+- Recommendation
+- Rule
+- Source
+- Consultation
 
 Entitas relasi (junction/associative):
 
-- `RuleCondition` (relasi Rule-Fact)
-- `RuleResult` (relasi Rule-Conclusion)
-- `ConsultationAnswer` (relasi Consultation-Fact + nilai jawaban)
-- `ConsultationConclusion` (relasi Consultation-Conclusion)
+- RuleCondition (relasi Rule-Fact)
+- RuleResult (relasi Rule-Conclusion)
+- ConsultationAnswer (relasi Consultation-Fact + nilai jawaban)
+- ConsultationConclusion (relasi Consultation-Conclusion)
 
 Secara desain, schema ini sudah memisahkan data master, relasi many-to-many, dan data transaksi konsultasi.
 
 ## 2. Unnormalized Form (UNF)
 
-Pada tahap UNF, data domain sistem pakar biasanya masih bercampur dalam satu tabel besar, misalnya tabel konseptual seperti:
+Pada tahap UNF, data domain sistem pakar masih digabung dalam satu catatan besar dan masih mengandung repeating group. Bentuk ini berguna sebagai titik awal sebelum data dipecah menjadi atribut atomik.
 
-- identitas user
-- data konsultasi
-- daftar fakta yang dijawab user
-- aturan yang terpenuhi
-- kesimpulan yang dihasilkan
-- rekomendasi dan sumber referensi
+Contoh masalah jika semua disimpan dalam satu catatan besar:
 
-Contoh masalah jika semua disimpan dalam satu tabel besar:
-
-1. **Repeating group**: jawaban fakta user bersifat berulang dalam satu konsultasi.
-2. **Redundansi tinggi**: informasi user, conclusion, dan source akan berulang pada banyak baris.
-3. **Anomali update**: perubahan satu data (mis. author source) harus diubah di banyak baris.
-4. **Anomali insert/delete**: sulit menambah data referensi tanpa transaksi konsultasi, atau menghapus baris transaksi bisa menghilangkan data referensi penting.
+1. Jawaban fakta pada satu konsultasi berulang dalam satu grup data.
+2. Informasi user, rule, conclusion, recommendation, dan source ikut berulang di banyak baris.
+3. Perubahan satu data referensi, misalnya author atau source type, harus disesuaikan di banyak tempat.
+4. Data referensi sulit dikelola terpisah dari transaksi konsultasi.
 
 ### Tabel dan Kolom pada UNF
 
-Pada UNF, seluruh data domain diasumsikan masih berada pada satu tabel gabungan.
-
-| Bentuk | Nama Tabel                             | Daftar Kolom                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ------ | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| UNF    | `consultation_report_unf` (konseptual) | `userId`, `fullname`, `username`, `email`, `consultationId`, `status`, `startedAt`, `endedAt`, `factId`, `factCode`, `factDescription`, `question`, `answerValue`, `ruleId`, `ruleName`, `ruleDescription`, `conclusionId`, `conclusionCode`, `conclusionDescription`, `category`, `recommendationId`, `recommendationTitle`, `recommendationContent`, `sourceId`, `sourceTitle`, `sourceAuthor`, `sourceType`, `sourceUrl` |
+| Bentuk | Nama Tabel                           | Daftar Kolom                                                                                                                                                                                                                                             |
+| ------ | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| UNF    | consultation_bundle_unf (konseptual) | user{fullname, username, email}, consultation{status, startedAt, endedAt}, facts[{code, question, answerValue}], rules[{name, description}], conclusions[{code, category}], recommendations[{title, content}], sources[{title, author, sourceType, url}] |
 
 ## 3. First Normal Form (1NF)
 
 ### Prinsip 1NF
 
-Setiap atribut harus bernilai atomik (tidak ada array/list di satu kolom), dan tidak boleh ada repeating group dalam satu baris.
+Setiap atribut harus bernilai atomik. Data sudah dipecah per nilai, tetapi struktur masih dapat menyimpan banyak atribut lintas entitas dalam satu tabel datar.
 
 ### Penerapan pada schema
 
-Schema sudah memenuhi 1NF karena:
-
-1. Nilai kolom bersifat atomik (contoh: `fullname`, `email`, `status`, `value`).
-2. Data berulang dipisahkan ke tabel relasi:
-   - `RuleCondition` untuk pasangan `ruleId`-`factId`
-   - `RuleResult` untuk pasangan `ruleId`-`conclusionId`
-   - `ConsultationAnswer` untuk pasangan `consultationId`-`factId`
-   - `ConsultationConclusion` untuk pasangan `consultationId`-`conclusionId`
-
-Dengan pemisahan ini, tidak ada kebutuhan menyimpan daftar nilai majemuk dalam satu field.
+Pada tahap ini, data dibuat atomik dengan satu baris untuk satu kombinasi konsultasi dan jawaban fakta. Nilai master masih menempel di baris yang sama sehingga redundansi masih tinggi.
 
 ### Tabel dan Kolom pada 1NF
 
-Pada 1NF, data berulang sudah dipisahkan ke tabel relasi, dan seluruh nilai kolom bersifat atomik.
+| Bentuk | Nama Tabel                         | Daftar Kolom                                                                                                                                                                                                           |
+| ------ | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1NF    | consultation_flat_1nf (konseptual) | userId, fullname, username, email, consultationId, status, startedAt, endedAt, factId, factCode, question, answerValue, ruleId, ruleName, conclusionId, conclusionCode, recommendationTitle, sourceTitle, sourceAuthor |
 
-| Bentuk | Nama Tabel                | Daftar Kolom                                                                                 |
-| ------ | ------------------------- | -------------------------------------------------------------------------------------------- |
-| 1NF    | `user`                    | `id`, `fullname`, `username`, `email`, `password`, `role`, `gender`, `isActive`, `createdAt` |
-| 1NF    | `fact`                    | `id`, `code`, `description`, `question`, `createdAt`, `isActive`                             |
-| 1NF    | `conclusion`              | `id`, `code`, `description`, `category`, `createdAt`, `isActive`                             |
-| 1NF    | `recommendation`          | `id`, `title`, `content`, `sourceId`, `createdAt`, `isActive`, `conclusionId`                |
-| 1NF    | `rule`                    | `id`, `name`, `description`, `isActive`, `createdBy`, `createdAt`                            |
-| 1NF    | `rule_condition`          | `id`, `ruleId`, `factId`                                                                     |
-| 1NF    | `rule_result`             | `id`, `ruleId`, `conclusionId`                                                               |
-| 1NF    | `consultation`            | `id`, `userId`, `status`, `startedAt`, `endedAt`                                             |
-| 1NF    | `consultation_answer`     | `id`, `consultationId`, `factId`, `value`                                                    |
-| 1NF    | `consultation_conclusion` | `id`, `consultationId`, `conclusionId`                                                       |
-| 1NF    | `source`                  | `id`, `title`, `author`, `publisher`, `sourceType`, `url`, `description`, `createdAt`        |
+### Hasil penyaringan pada 1NF
+
+Yang berubah dari UNF ke 1NF adalah:
+
+1. Repeating group dipecah menjadi baris atomik.
+2. Satu baris mewakili satu fakta yang dijawab pada satu konsultasi.
+3. Atribut masih bercampur antar entitas, jadi redundansi belum hilang.
 
 ## 4. Second Normal Form (2NF)
 
@@ -94,31 +72,39 @@ Tabel harus sudah 1NF, dan semua atribut non-key harus bergantung penuh pada pri
 
 ### Penerapan pada schema
 
-Schema memenuhi 2NF karena:
-
-1. Setiap tabel menggunakan primary key tunggal `id` (surrogate key autoincrement).
-2. Tidak ada atribut non-key yang hanya bergantung pada sebagian key komposit.
-3. Constraint unik gabungan (mis. `@@unique([ruleId, factId])`) dipakai untuk menjaga keunikan relasi bisnis, bukan sebagai primary key utama tabel.
-
-Karena PK tabel tunggal, isu partial dependency praktis tidak muncul.
+Pada tahap 2NF, data sudah dipisah ke master table, transaction table, dan junction table. Penyaringan utamanya adalah menghilangkan ketergantungan yang tidak perlu dari tabel datar 1NF.
 
 ### Tabel dan Kolom pada 2NF
 
-Semua tabel tetap sama seperti 1NF, namun pada 2NF ditekankan bahwa atribut non-key bergantung penuh pada PK tunggal (`id`).
+| Bentuk | Nama Tabel              | Peran                                        |
+| ------ | ----------------------- | -------------------------------------------- |
+| 2NF    | user                    | master user                                  |
+| 2NF    | fact                    | master fakta                                 |
+| 2NF    | conclusion              | master kesimpulan                            |
+| 2NF    | rule                    | master rule                                  |
+| 2NF    | consultation            | transaksi konsultasi                         |
+| 2NF    | consultation_answer     | detail jawaban fakta per konsultasi          |
+| 2NF    | consultation_conclusion | hasil kesimpulan per konsultasi              |
+| 2NF    | rule_condition          | relasi rule-fact                             |
+| 2NF    | rule_result             | relasi rule-conclusion                       |
+| 2NF    | recommendation          | data rekomendasi yang menempel ke conclusion |
+| 2NF    | source                  | data referensi awal                          |
 
-| Bentuk | Nama Tabel                | Primary Key | Kolom Non-Key                                                                          |
-| ------ | ------------------------- | ----------- | -------------------------------------------------------------------------------------- |
-| 2NF    | `user`                    | `id`        | `fullname`, `username`, `email`, `password`, `role`, `gender`, `isActive`, `createdAt` |
-| 2NF    | `fact`                    | `id`        | `code`, `description`, `question`, `createdAt`, `isActive`                             |
-| 2NF    | `conclusion`              | `id`        | `code`, `description`, `category`, `createdAt`, `isActive`                             |
-| 2NF    | `recommendation`          | `id`        | `title`, `content`, `sourceId`, `createdAt`, `isActive`, `conclusionId`                |
-| 2NF    | `rule`                    | `id`        | `name`, `description`, `isActive`, `createdBy`, `createdAt`                            |
-| 2NF    | `rule_condition`          | `id`        | `ruleId`, `factId`                                                                     |
-| 2NF    | `rule_result`             | `id`        | `ruleId`, `conclusionId`                                                               |
-| 2NF    | `consultation`            | `id`        | `userId`, `status`, `startedAt`, `endedAt`                                             |
-| 2NF    | `consultation_answer`     | `id`        | `consultationId`, `factId`, `value`                                                    |
-| 2NF    | `consultation_conclusion` | `id`        | `consultationId`, `conclusionId`                                                       |
-| 2NF    | `source`                  | `id`        | `title`, `author`, `publisher`, `sourceType`, `url`, `description`, `createdAt`        |
+### Kolom utama 2NF
+
+| Tabel                   | Kolom utama                                                                |
+| ----------------------- | -------------------------------------------------------------------------- |
+| user                    | id, fullname, username, email, password, role, gender, isActive, createdAt |
+| fact                    | id, code, description, question, fact, createdAt, isActive                 |
+| conclusion              | id, code, description, category, createdAt, isActive                       |
+| rule                    | id, name, description, isActive, priority, createdBy, createdAt            |
+| consultation            | id, userId, status, startedAt, endedAt, comparisonNote                     |
+| consultation_answer     | id, consultationId, factId, value                                          |
+| consultation_conclusion | id, consultationId, conclusionId                                           |
+| rule_condition          | id, ruleId, factId                                                         |
+| rule_result             | id, ruleId, conclusionId                                                   |
+| recommendation          | id, title, content, sourceId, createdAt, isActive, conclusionId            |
+| source                  | id, title, author, publisher, sourceType, url, description, createdAt      |
 
 ## 5. Third Normal Form (3NF)
 
@@ -128,45 +114,43 @@ Tabel harus sudah 2NF dan tidak boleh ada ketergantungan transitif antar atribut
 
 ### Penerapan pada schema
 
-Secara umum, schema sudah berada pada 3NF:
+Pada schema Prisma terbaru, 3NF tercapai karena atribut referensi sudah dipisah dari data utamanya:
 
-1. Atribut deskriptif user hanya di tabel `User`.
-2. Atribut deskriptif fakta hanya di tabel `Fact`.
-3. Atribut deskriptif kesimpulan hanya di tabel `Conclusion`.
-4. Data bibliografi dipusatkan di tabel `Source` dan direlasikan dari `Recommendation`.
-5. Tabel transaksi (`Consultation`, `ConsultationAnswer`, `ConsultationConclusion`) menyimpan fakta kejadian konsultasi, bukan duplikasi atribut master.
-
-### Catatan interpretasi (jika diperdebatkan)
-
-Ada relasi FK seperti `Recommendation -> Conclusion` atau `Rule -> User (createdBy)` yang secara logika dapat menelusuri atribut di tabel lain. Ini **bukan** pelanggaran 3NF selama atribut non-key tidak diduplikasi sebagai field turunan di tabel asal.
-
-Artinya, dependency lintas tabel lewat foreign key adalah desain relasional normal, bukan transitif dalam satu tabel yang sama.
+1. Identitas user hanya tersimpan di User.
+2. Informasi fakta hanya tersimpan di Fact.
+3. Informasi kesimpulan hanya tersimpan di Conclusion.
+4. Rekomendasi disimpan terpisah dan hanya menunjuk ke Source dan Conclusion.
+5. Data transaksi konsultasi tidak menyalin atribut master ke tabel transaksi.
 
 ### Tabel dan Kolom pada 3NF
 
-Pada 3NF, struktur tabel tetap, tetapi setiap atribut non-key ditempatkan pada entitas yang tepat dan tidak menjadi atribut turunan non-key dalam tabel yang sama.
+Berikut komposisi tabel final yang sesuai dengan [prisma/schema.prisma](../prisma/schema.prisma):
 
-| Bentuk | Nama Tabel                | Kolom Kunci | Kolom Non-Key Utama                                                                    |
-| ------ | ------------------------- | ----------- | -------------------------------------------------------------------------------------- |
-| 3NF    | `user`                    | `id`        | `fullname`, `username`, `email`, `password`, `role`, `gender`, `isActive`, `createdAt` |
-| 3NF    | `fact`                    | `id`        | `code`, `description`, `question`, `createdAt`, `isActive`                             |
-| 3NF    | `conclusion`              | `id`        | `code`, `description`, `category`, `createdAt`, `isActive`                             |
-| 3NF    | `recommendation`          | `id`        | `title`, `content`, `sourceId`, `createdAt`, `isActive`, `conclusionId`                |
-| 3NF    | `rule`                    | `id`        | `name`, `description`, `isActive`, `createdBy`, `createdAt`                            |
-| 3NF    | `rule_condition`          | `id`        | `ruleId`, `factId`                                                                     |
-| 3NF    | `rule_result`             | `id`        | `ruleId`, `conclusionId`                                                               |
-| 3NF    | `consultation`            | `id`        | `userId`, `status`, `startedAt`, `endedAt`                                             |
-| 3NF    | `consultation_answer`     | `id`        | `consultationId`, `factId`, `value`                                                    |
-| 3NF    | `consultation_conclusion` | `id`        | `consultationId`, `conclusionId`                                                       |
-| 3NF    | `source`                  | `id`        | `title`, `author`, `publisher`, `sourceType`, `url`, `description`, `createdAt`        |
+| Bentuk | Nama Tabel              | Kolom Utama                                                                |
+| ------ | ----------------------- | -------------------------------------------------------------------------- |
+| 3NF    | user                    | id, fullname, username, email, password, role, gender, isActive, createdAt |
+| 3NF    | fact                    | id, code, description, question, fact, createdAt, isActive                 |
+| 3NF    | conclusion              | id, code, description, category, createdAt, isActive                       |
+| 3NF    | rule                    | id, name, description, isActive, priority, createdBy, createdAt            |
+| 3NF    | rule_condition          | id, ruleId, factId                                                         |
+| 3NF    | rule_result             | id, ruleId, conclusionId                                                   |
+| 3NF    | consultation            | id, userId, status, startedAt, endedAt, comparisonNote                     |
+| 3NF    | consultation_answer     | id, consultationId, factId, value                                          |
+| 3NF    | consultation_conclusion | id, consultationId, conclusionId                                           |
+| 3NF    | recommendation          | id, title, content, sourceId, createdAt, isActive, conclusionId            |
+| 3NF    | source                  | id, title, author, publisher, sourceType, url, description, createdAt      |
+
+### Catatan penting
+
+Pada schema saat ini, tahap 2NF dan 3NF memang tampak mirip karena desain akhirnya sudah cukup rapi. Perbedaan utamanya ada pada penjelasan proses: 2NF menekankan pemisahan entitas dan junction table, sedangkan 3NF menegaskan bahwa atribut referensi tidak lagi bercampur dengan atribut utama dalam tabel yang sama.
 
 ## 6. Kesimpulan
 
 Normalisasi struktur database pada [prisma/schema.prisma](../prisma/schema.prisma) dapat diringkas sebagai berikut:
 
 1. **UNF**: Secara konseptual akan menimbulkan repeating group dan redundansi tinggi jika semua data digabung.
-2. **1NF**: Sudah tercapai dengan atribut atomik dan pemisahan repeating group ke tabel relasi.
-3. **2NF**: Sudah tercapai karena penggunaan primary key tunggal per tabel, sehingga tidak ada partial dependency.
-4. **3NF**: **Ada / tercapai secara praktis** pada desain saat ini, karena atribut non-key berada pada entitas yang tepat dan tidak ada duplikasi transitif dalam tabel yang sama.
+2. **1NF**: Sudah tercapai pada level data atomik, tetapi masih ada redundansi karena atribut lintas entitas masih bercampur dalam satu baris datar.
+3. **2NF**: Sudah tercapai karena data dipisah ke master table, transaction table, dan junction table.
+4. **3NF**: Sudah tercapai pada schema Prisma terbaru karena atribut referensi tidak lagi bercampur dengan atribut utama dalam tabel yang sama.
 
 Dengan demikian, schema saat ini sudah menunjukkan desain relasional yang baik untuk kebutuhan sistem pakar berbasis aturan.
