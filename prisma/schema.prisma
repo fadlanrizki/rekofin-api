@@ -34,7 +34,7 @@ enum Gender {
 ////////////////////////////////////////////////////
 
 model User {
-  id       Int     @id @default(autoincrement())
+  userId   Int     @id @default(autoincrement())
   fullname String
   username String  @unique
   email    String  @unique
@@ -52,7 +52,7 @@ model User {
 }
 
 model Fact {
-  id          Int      @id @default(autoincrement())
+  factId      Int      @id @default(autoincrement())
   code        String   @unique
   description String   @db.Text
   question    String
@@ -67,12 +67,12 @@ model Fact {
 }
 
 model Conclusion {
-  id          Int      @id @default(autoincrement())
-  code        String   @unique
-  description String   @db.Text
-  category    String
-  createdAt   DateTime @default(now())
-  isActive    Boolean  @default(true)
+  conclusionId Int      @id @default(autoincrement())
+  code         String   @unique
+  description  String   @db.Text
+  category     String
+  createdAt    DateTime @default(now())
+  isActive     Boolean  @default(true)
 
   ruleResults             RuleResult[]
   recommendations         Recommendation[]
@@ -82,29 +82,29 @@ model Conclusion {
 }
 
 model Recommendation {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String   @db.Text
-  sourceId  Int?
-  createdAt DateTime @default(now())
-  isActive  Boolean  @default(true)
+  recommendationId Int      @id @default(autoincrement())
+  title            String
+  content          String   @db.Text
+  sourceId         Int?
+  createdAt        DateTime @default(now())
+  isActive         Boolean  @default(true)
 
   conclusionId Int
-  conclusion   Conclusion @relation(fields: [conclusionId], references: [id])
-  source       Source?    @relation(fields: [sourceId], references: [id])
+  conclusion   Conclusion @relation(fields: [conclusionId], references: [conclusionId])
+  source       Source?    @relation(fields: [sourceId], references: [sourceId])
 
   @@map("recommendation")
 }
 
 model Rule {
-  id          Int     @id @default(autoincrement())
+  ruleId      Int     @id @default(autoincrement())
   name        String
   description String  @db.Text
   isActive    Boolean @default(true)
   priority    Int     @default(0)
 
   createdBy Int
-  creator   User @relation("RuleCreatedBy", fields: [createdBy], references: [id])
+  creator   User @relation("RuleCreatedBy", fields: [createdBy], references: [userId])
 
   createdAt DateTime @default(now())
 
@@ -119,26 +119,26 @@ model Rule {
 ////////////////////////////////////////////////////
 
 model RuleCondition {
-  id Int @id @default(autoincrement())
+  ruleConditionId Int @id @default(autoincrement())
 
   ruleId Int
   factId Int
 
-  rule Rule @relation(fields: [ruleId], references: [id])
-  fact Fact @relation(fields: [factId], references: [id])
+  rule Rule @relation(fields: [ruleId], references: [ruleId])
+  fact Fact @relation(fields: [factId], references: [factId])
 
   @@unique([ruleId, factId])
   @@map("rule_condition")
 }
 
 model RuleResult {
-  id Int @id @default(autoincrement())
+  ruleResultId Int @id @default(autoincrement())
 
   ruleId       Int
   conclusionId Int
 
-  rule       Rule       @relation(fields: [ruleId], references: [id])
-  conclusion Conclusion @relation(fields: [conclusionId], references: [id])
+  rule       Rule       @relation(fields: [ruleId], references: [ruleId])
+  conclusion Conclusion @relation(fields: [conclusionId], references: [conclusionId])
 
   @@unique([ruleId, conclusionId])
   @@map("rule_result")
@@ -149,14 +149,14 @@ model RuleResult {
 ////////////////////////////////////////////////////
 
 model Consultation {
-  id             Int                @id @default(autoincrement())
+  consultationId Int                @id @default(autoincrement())
   userId         Int
   status         ConsultationStatus @default(IN_PROGRESS)
   startedAt      DateTime           @default(now())
   endedAt        DateTime?
   comparisonNote String?            @db.Text
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [userId])
 
   answers     ConsultationAnswer[]
   conclusions ConsultationConclusion[]
@@ -165,25 +165,25 @@ model Consultation {
 }
 
 model ConsultationAnswer {
-  id             Int     @id @default(autoincrement())
-  consultationId Int
-  factId         Int
-  value          Boolean
+  consultationAnswerId Int     @id @default(autoincrement())
+  consultationId       Int
+  factId               Int
+  value                Boolean
 
-  consultation Consultation @relation(fields: [consultationId], references: [id])
-  fact         Fact         @relation(fields: [factId], references: [id])
+  consultation Consultation @relation(fields: [consultationId], references: [consultationId])
+  fact         Fact         @relation(fields: [factId], references: [factId])
 
   @@unique([consultationId, factId])
   @@map("consultation_answer")
 }
 
 model ConsultationConclusion {
-  id             Int @id @default(autoincrement())
-  consultationId Int
-  conclusionId   Int
+  consultationConclusionId Int @id @default(autoincrement())
+  consultationId           Int
+  conclusionId             Int
 
-  consultation Consultation @relation(fields: [consultationId], references: [id])
-  conclusion   Conclusion   @relation(fields: [conclusionId], references: [id])
+  consultation Consultation @relation(fields: [consultationId], references: [consultationId])
+  conclusion   Conclusion   @relation(fields: [conclusionId], references: [conclusionId])
 
   @@unique([consultationId, conclusionId])
   @@map("consultation_conclusion")
@@ -195,7 +195,7 @@ enum ConsultationStatus {
 }
 
 model Source {
-  id          Int        @id @default(autoincrement())
+  sourceId    Int        @id @default(autoincrement())
   title       String
   author      String
   publisher   String?

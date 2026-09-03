@@ -13,7 +13,7 @@ export class QuestionService {
 
     return await prismaClient.question.create({
       data: {
-        factId: selectedFact.id,
+        factId: selectedFact.factId,
         text: validRequest.text,
       },
     });

@@ -2,11 +2,14 @@ import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
 import { TGetList } from "../types/api/common";
 import { TAddFact, TEditFact } from "../types/api/fact";
+
+const toApiFact = ({ factId, ...rest }: any) => ({ id: factId, ...rest });
+
 export class FactService {
   static async create(request: TAddFact): Promise<any> {
     const validRequest = request as unknown as TAddFact;
 
-    return await prismaClient.fact.create({
+    const fact = await prismaClient.fact.create({
       data: {
         code: validRequest.code,
         description: validRequest.description,
@@ -14,12 +17,14 @@ export class FactService {
         fact: validRequest.fact,
       },
     });
+
+    return toApiFact(fact);
   }
 
   static async update(request: TEditFact): Promise<any> {
     const validRequest = request as unknown as TEditFact;
 
-    return await prismaClient.fact.update({
+    const fact = await prismaClient.fact.update({
       data: {
         code: validRequest.code,
         description: validRequest.description,
@@ -27,9 +32,11 @@ export class FactService {
         fact: validRequest.fact,
       },
       where: {
-        id: validRequest.id,
+        factId: validRequest.id,
       },
     });
+
+    return toApiFact(fact);
   }
 
   static async getList(request: TGetList): Promise<any> {
@@ -51,11 +58,13 @@ export class FactService {
         }
       : { isActive: true };
 
-    const data = await prismaClient.fact.findMany({
+    const rawData = await prismaClient.fact.findMany({
       skip: (page - 1) * limit,
       take: limit,
       where: searchCondition,
     });
+
+    const data = rawData.map(toApiFact);
 
     const total = await prismaClient.fact.count({
       where: searchCondition,
@@ -72,14 +81,14 @@ export class FactService {
     const data = await prismaClient.fact.findMany({
       where: { isActive: true },
       select: {
-        id: true,
+        factId: true,
         code: true,
         fact: true,
       },
     });
 
     const formattedData = data.map((item) => ({
-      id: item.id,
+      id: item.factId,
       label: `${item.code} - ${item.fact}`,
     }));
 
@@ -91,7 +100,7 @@ export class FactService {
 
     const selectCountRule = await prismaClient.fact.count({
       where: {
-        id: selectedId,
+        factId: selectedId,
       },
     });
 
@@ -99,11 +108,13 @@ export class FactService {
       throw new ResponseError(400, `Data fact with ID : ${id} is not found.`);
     }
 
-    return await prismaClient.fact.findUnique({
-      where: {
-        id: selectedId,
-      },
-    });
+    return await prismaClient.fact
+      .findUnique({
+        where: {
+          factId: selectedId,
+        },
+      })
+      .then((fact) => fact && toApiFact(fact));
   }
 
   static async softDelete(id: string): Promise<any> {
@@ -111,7 +122,7 @@ export class FactService {
 
     const selectCountRule = await prismaClient.fact.count({
       where: {
-        id: selectedId,
+        factId: selectedId,
       },
     });
 
@@ -119,13 +130,15 @@ export class FactService {
       throw new ResponseError(400, `Data fact with ID : ${id} is not found.`);
     }
 
-    return await prismaClient.fact.update({
+    const fact = await prismaClient.fact.update({
       data: {
         isActive: false,
       },
       where: {
-        id: selectedId,
+        factId: selectedId,
       },
     });
+
+    return toApiFact(fact);
   }
 }

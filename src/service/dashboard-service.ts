@@ -149,7 +149,7 @@ export class DashboardService {
       orderBy: { startedAt: "desc" },
       take: 5,
       select: {
-        id: true,
+        consultationId: true,
         status: true,
         startedAt: true,
         endedAt: true,
@@ -157,13 +157,13 @@ export class DashboardService {
           select: {
             conclusion: {
               select: {
-                id: true,
+                conclusionId: true,
                 code: true,
                 description: true,
                 category: true,
                 recommendations: {
                   select: {
-                    id: true,
+                    recommendationId: true,
                     title: true,
                     content: true,
                   },
@@ -177,19 +177,19 @@ export class DashboardService {
 
     const recentHistories: TConsultationHistory[] = historyConsultation.map(
       (consultation) => ({
-        id: consultation.id,
+        id: consultation.consultationId,
         status: consultation.status,
         startedAt: consultation.startedAt.toISOString(),
         endedAt: consultation.endedAt?.toISOString() ?? "",
         conclusions: consultation.conclusions.map((item) => ({
           conclusion: {
-            id: item.conclusion.id,
+            id: item.conclusion.conclusionId,
             code: item.conclusion.code,
             description: item.conclusion.description,
             category: item.conclusion.category,
             recommendations: item.conclusion.recommendations.map(
               (recommendation) => ({
-                id: recommendation.id,
+                id: recommendation.recommendationId,
                 title: recommendation.title,
                 content: recommendation.content,
               }),

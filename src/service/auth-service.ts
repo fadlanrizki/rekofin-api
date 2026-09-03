@@ -23,16 +23,14 @@ export class AuthService {
         ],
       },
       select: {
-        id: true,
+        userId: true,
         username: true,
         password: true,
         isActive: true,
       },
     });
 
-    if (!user) {
-      throw new ResponseError(400, "Invalid Username Or Password");
-    }
+    if (!user) { throw new ResponseError(400, "Invalid Username Or Password") }
 
     const validPassword = await bcrypt.compare(
       loginRequest.password,
@@ -42,38 +40,34 @@ export class AuthService {
     if (user.username !== loginRequest.credential || !validPassword) {
       throw new ResponseError(400, "Invalid Username Or Password");
     }
-
     if (user.isActive === false) {
       throw new ResponseError(400, "User is not active, please contact admin");
     }
 
     const selectedUser = await prismaClient.user.findUnique({
-      where: { id: user.id },
+      where: { userId: user.userId },
       select: {
-        id: true,
+        userId: true,
         username: true,
         email: true,
         role: true,
       },
     });
 
-    if (!selectedUser) {
-      throw new ResponseError(400, "User not found");
-    }
-
-    const SECRET_KEY =
-      selectedUser?.role === Role.ADMIN ? ADMIN_SECRET_KEY : USER_SECRET_KEY;
-
-    const token = jwt.sign(selectedUser, SECRET_KEY, {
+    if (!selectedUser) { throw new ResponseError(400, "User not found") }
+    const SECRET_KEY = selectedUser?.role === Role.ADMIN ? ADMIN_SECRET_KEY : USER_SECRET_KEY;
+    const jwtPayload = {
+      id: selectedUser.userId,
+      username: selectedUser.username,
+      email: selectedUser.email,
+      role: selectedUser.role,
+    };
+    const token = jwt.sign(jwtPayload, SECRET_KEY, {
       algorithm: "HS256",
       expiresIn: "10h",
     });
 
-    const response = {
-      token,
-    };
-
-    return response;
+    return { token }; 
   }
 
   static async registerUser(request: TRegisterUserRequest): Promise<any> {

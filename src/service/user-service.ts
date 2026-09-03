@@ -8,6 +8,8 @@ import {
 } from "../types/api/user";
 import bcrypt from "bcryptjs";
 
+const toApiUser = ({ userId, ...rest }: any) => ({ id: userId, ...rest });
+
 export class UserService {
   static async getList(request: TGetList): Promise<any> {
     const validRequest = request as unknown as TGetList;
@@ -26,12 +28,12 @@ export class UserService {
         }
       : {};
 
-    const data = await prismaClient.user.findMany({
+    const rawData = await prismaClient.user.findMany({
       skip: (page - 1) * limit,
       take: limit,
       where: searchCondition,
       select: {
-        id: true,
+        userId: true,
         fullname: true,
         username: true,
         email: true,
@@ -41,6 +43,8 @@ export class UserService {
         createdAt: true,
       },
     });
+
+    const data = rawData.map(toApiUser);
 
     const total = await prismaClient.user.count({
       where: searchCondition,
@@ -74,7 +78,7 @@ export class UserService {
 
     const hashedPassword = await bcrypt.hash(validRequest.password, 10);
 
-    return await prismaClient.user.create({
+    const user = await prismaClient.user.create({
       data: {
         fullname: validRequest.fullname,
         username: validRequest.username,
@@ -84,6 +88,8 @@ export class UserService {
         gender: validRequest.gender || null,
       },
     });
+
+    return toApiUser(user);
   }
 
   static async findById(id: string): Promise<any> {
@@ -91,7 +97,7 @@ export class UserService {
 
     const selectCountRule = await prismaClient.user.count({
       where: {
-        id: selectedId,
+        userId: selectedId,
       },
     });
 
@@ -99,11 +105,13 @@ export class UserService {
       throw new ResponseError(400, `Data user with ID : ${id} is not found.`);
     }
 
-    return await prismaClient.user.findUnique({
+    const user = await prismaClient.user.findUnique({
       where: {
-        id: selectedId,
+        userId: selectedId,
       },
     });
+
+    return user && toApiUser(user);
   }
 
   static async changeStatus(id: string): Promise<any> {
@@ -111,7 +119,7 @@ export class UserService {
 
     const selectCountUser = await prismaClient.user.findUnique({
       where: {
-        id: selectedId,
+        userId: selectedId,
       },
     });
 
@@ -119,19 +127,21 @@ export class UserService {
       throw new ResponseError(400, `Data user with ID : ${id} is not found.`);
     }
 
-    return await prismaClient.user.update({
+    const user = await prismaClient.user.update({
       where: {
-        id: selectedId,
+        userId: selectedId,
       },
       data: {
         isActive: !selectCountUser.isActive,
       },
       select: {
-        id: true,
+        userId: true,
         fullname: true,
         isActive: true,
       },
     });
+
+    return toApiUser(user);
   }
 
   static async getProfile(req: any): Promise<any> {
@@ -140,7 +150,7 @@ export class UserService {
 
     const selectCountRule = await prismaClient.user.count({
       where: {
-        id: selectedId,
+        userId: selectedId,
       },
     });
 
@@ -148,12 +158,12 @@ export class UserService {
       throw new ResponseError(400, `Data user with ID : ${id} is not found.`);
     }
 
-    return await prismaClient.user.findUnique({
+    const user = await prismaClient.user.findUnique({
       where: {
-        id: selectedId,
+        userId: selectedId,
       },
       select: {
-        id: true,
+        userId: true,
         fullname: true,
         username: true,
         email: true,
@@ -163,6 +173,8 @@ export class UserService {
         createdAt: true,
       },
     });
+
+    return user && toApiUser(user);
   }
 
   static async updateProfile(req: any): Promise<any> {
@@ -172,7 +184,7 @@ export class UserService {
 
     const selectCountUser = await prismaClient.user.findUnique({
       where: {
-        id: selectedId,
+        userId: selectedId,
       },
     });
 
@@ -183,7 +195,7 @@ export class UserService {
     if (request.username || request.email) {
       const selectCountUser = await prismaClient.user.count({
         where: {
-          id: { not: selectedId },
+          userId: { not: selectedId },
           OR: [{ username: request.username }, { email: request.email }],
         },
       });
@@ -195,9 +207,9 @@ export class UserService {
         );
       }
 
-      return await prismaClient.user.update({
+      const user = await prismaClient.user.update({
         where: {
-          id: selectedId,
+          userId: selectedId,
         },
         data: {
           fullname: request.fullname,
@@ -206,6 +218,8 @@ export class UserService {
           gender: request.gender || null,
         },
       });
+
+      return toApiUser(user);
     }
   }
 
@@ -215,7 +229,7 @@ export class UserService {
     const request = req.body as unknown as TChangePassword;
 
     const user = await prismaClient.user.findUnique({
-      where: { id: selectedId },
+      where: { userId: selectedId },
     });
 
     if (!user) {
@@ -230,7 +244,7 @@ export class UserService {
     const hashedPassword = await bcrypt.hash(request.password, 10);
 
     await prismaClient.user.update({
-      where: { id: selectedId },
+      where: { userId: selectedId },
       data: { password: hashedPassword },
     });
   }

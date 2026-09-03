@@ -2,6 +2,18 @@ import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
 import { ConsultationStatus } from "../generated/prisma";
 import { TGetList } from "../types/api/common";
+
+const mapConclusionWithRecommendations = (conclusion: any) => ({
+  ...conclusion,
+  id: conclusion.conclusionId,
+  recommendations: (conclusion.recommendations ?? []).map(
+    (recommendation: any) => ({
+      ...recommendation,
+      id: recommendation.recommendationId,
+    }),
+  ),
+});
+
 export class ConsultationService {
   static selectBestMatchedRule(rules: any[], factIds: number[]): number | null {
     const matchedRules = rules.filter((rule) => {
@@ -27,7 +39,7 @@ export class ConsultationService {
         return b.ruleConditions.length - a.ruleConditions.length;
       }
 
-      return a.id - b.id;
+      return a.ruleId - b.ruleId;
     });
 
     const [bestRule] = matchedRules;
@@ -45,7 +57,7 @@ export class ConsultationService {
       },
     });
 
-    return consultation;
+    return { id: consultation.consultationId, ...consultation };
   }
 
   static async getConsultationQuestions(req: any): Promise<any> {
@@ -53,7 +65,7 @@ export class ConsultationService {
     const userId = req.user.id;
 
     const consultation: any = await prismaClient.consultation.findFirst({
-      where: { id: consultationId, userId },
+      where: { consultationId: consultationId, userId },
     });
 
     if (!consultation) {
@@ -66,7 +78,7 @@ export class ConsultationService {
 
     const facts = await prismaClient.fact.findMany({
       select: {
-        id: true,
+        factId: true,
         code: true,
         question: true,
         description: true,
@@ -76,7 +88,7 @@ export class ConsultationService {
       },
     });
 
-    return facts;
+    return facts.map(({ factId, ...rest }) => ({ id: factId, ...rest }));
   }
 
   // New priority-based chaining logic.
@@ -85,7 +97,7 @@ export class ConsultationService {
   static async runPriorityChaining(factIds: number[]): Promise<number | null> {
     const rules = await prismaClient.rule.findMany({
       where: { isActive: true },
-      orderBy: [{ priority: "asc" }, { id: "asc" }],
+      orderBy: [{ priority: "asc" }, { ruleId: "asc" }],
       include: {
         ruleConditions: true,
         ruleResults: true,
@@ -148,7 +160,7 @@ export class ConsultationService {
     }
 
     return {
-      consultationId: consultation.id,
+      consultationId: consultation.consultationId,
       facts: (consultation.answers ?? []).map((answer: any) => ({
         code: answer.fact?.code,
         question: answer.fact?.question,
@@ -158,7 +170,7 @@ export class ConsultationService {
         const conclusion = item.conclusion ?? item;
 
         return {
-          id: conclusion.id,
+          id: conclusion.conclusionId,
           code: conclusion.code,
           description: conclusion.description,
           category: conclusion.category,
@@ -166,7 +178,7 @@ export class ConsultationService {
           isActive: conclusion.isActive,
           recommendations: (conclusion.recommendations ?? []).map(
             (recommendation: any) => ({
-              id: recommendation.id,
+              id: recommendation.recommendationId,
               title: recommendation.title,
               content: recommendation.content,
               sourceId: recommendation.sourceId,
@@ -201,7 +213,7 @@ export class ConsultationService {
     customData?: { before?: any; after?: any; note?: string },
   ): Promise<any | null> {
     const currentConsultation = await tx.consultation.findFirst({
-      where: { id: consultationId, userId },
+      where: { consultationId: consultationId, userId },
       include: {
         answers: {
           where: { value: true },
@@ -221,7 +233,7 @@ export class ConsultationService {
       where: {
         userId,
         status: ConsultationStatus.COMPLETED,
-        id: { not: consultationId },
+        consultationId: { not: consultationId },
       },
       orderBy: { endedAt: "desc" },
       include: {
@@ -250,7 +262,7 @@ export class ConsultationService {
     );
 
     await tx.consultation.update({
-      where: { id: consultationId },
+      where: { consultationId: consultationId },
       data: {
         comparisonNote: JSON.stringify(comparisonPayload),
       },
@@ -267,7 +279,7 @@ export class ConsultationService {
     try {
       const result = await prismaClient.$transaction(async (tx) => {
         const consultation = await tx.consultation.findFirst({
-          where: { id: consultationId, userId },
+          where: { consultationId: consultationId, userId },
         });
 
         if (!consultation) {
@@ -303,7 +315,7 @@ export class ConsultationService {
         }
 
         await tx.consultation.update({
-          where: { id: consultationId },
+          where: { consultationId: consultationId },
           data: {
             status: "COMPLETED",
             endedAt: new Date(),
@@ -355,8 +367,8 @@ export class ConsultationService {
     }
 
     const consultation = await prismaClient.consultation.findFirst({
-      where: { id: consultationId, userId },
-      select: { id: true },
+      where: { consultationId: consultationId, userId },
+      select: { consultationId: true },
     });
 
     if (!consultation) {
@@ -370,7 +382,7 @@ export class ConsultationService {
     );
 
     await prismaClient.consultation.update({
-      where: { id: consultationId },
+      where: { consultationId: consultationId },
       data: {
         comparisonNote: JSON.stringify(comparisonData),
       },
@@ -387,7 +399,7 @@ export class ConsultationService {
     const userId = req.user.id;
 
     const consultation = await prismaClient.consultation.findFirst({
-      where: { id: consultationId, userId },
+      where: { consultationId: consultationId, userId },
       include: {
         answers: {
           where: { value: true },
@@ -423,7 +435,9 @@ export class ConsultationService {
         code: a.fact.code,
         fact: a.fact.fact,
       })),
-      conclusions: consultation.conclusions.map((c) => c.conclusion),
+      conclusions: consultation.conclusions.map((c) =>
+        mapConclusionWithRecommendations(c.conclusion),
+      ),
       comparison,
     };
 
@@ -484,7 +498,7 @@ export class ConsultationService {
       userId: userId,
     };
 
-    const [total, consultations] = await prismaClient.$transaction([
+    const [total, rawConsultations] = await prismaClient.$transaction([
       prismaClient.consultation.count({ where: searchCondition }),
       prismaClient.consultation.findMany({
         orderBy: { startedAt: "desc" },
@@ -496,7 +510,7 @@ export class ConsultationService {
             include: {
               conclusion: {
                 select: {
-                  id: true,
+                  conclusionId: true,
                   code: true,
                   description: true,
                   category: true,
@@ -507,6 +521,18 @@ export class ConsultationService {
         },
       }),
     ]);
+
+    const consultations = rawConsultations.map((consultation: any) => ({
+      ...consultation,
+      id: consultation.consultationId,
+      conclusions: consultation.conclusions.map((item: any) => ({
+        ...item,
+        conclusion: {
+          ...item.conclusion,
+          id: item.conclusion.conclusionId,
+        },
+      })),
+    }));
 
     return {
       consultations,
@@ -521,13 +547,13 @@ export class ConsultationService {
       where: { userId, status: "IN_PROGRESS" },
       orderBy: { startedAt: "desc" },
       select: {
-        id: true,
+        consultationId: true,
         status: true,
         startedAt: true,
         endedAt: true,
       },
     });
 
-    return consultation;
+    return consultation && { id: consultation.consultationId, ...consultation };
   }
 }
