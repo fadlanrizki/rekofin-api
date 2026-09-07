@@ -1,0 +1,46 @@
+@startmindmap
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultTextAlignment center
+
+* Mulai Konsultasi
+** F001
+*** Ya --> C001
+*** Tidak --> F002
+** F002
+*** Ya --> C002
+*** Tidak --> F003
+** F003
+*** Ya --> C003
+*** Tidak --> F004
+** F004
+*** Ya --> C004
+*** Tidak --> F005
+** F005
+*** Ya --> C005
+*** Tidak --> F007
+** F007
+*** Ya --> C006
+*** Tidak --> F006
+** F006
+*** Ya --> C007
+*** Tidak --> Tahap Investasi
+**** F008
+***** Ya --> C008: Investasi untuk profil risiko aggressive
+***** Tidak --> F009
+**** F009
+***** Ya --> C009: Investasi untuk profil risiko moderat
+***** Tidak --> F010
+**** F010
+***** Ya --> C010: Investasi untuk profil risiko conservative
+***** Tidak --> Tidak ada keputusan investasi utama
+
+left side
+
+* Konteks Syariah
+** F011
+*** Ya --> C011: Investasi agresive + syariah
+*** Ya --> C012: Investasi moderat + syariah
+*** Ya --> C013: Investasi conservative + syariah
+*** Tidak --> Rekomendasi non-syariah
+@endmindmap

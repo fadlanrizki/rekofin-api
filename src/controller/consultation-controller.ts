@@ -53,6 +53,23 @@ export class ConsultationController {
     }
   }
 
+  static async saveConsultationComparison(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const response = await ConsultationService.saveComparisonNote(req);
+      res.status(200).json({
+        ok: true,
+        data: response,
+        message: "Berhasil menyimpan catatan perbandingan konsultasi",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getConsultationResult(
     req: Request,
     res: Response,
@@ -76,7 +93,8 @@ export class ConsultationController {
     next: NextFunction,
   ) {
     try {
-      const response = await ConsultationService.getLatestConsultationResult(req);
+      const response =
+        await ConsultationService.getLatestConsultationResult(req);
       res.status(200).json({
         ok: true,
         data: response,

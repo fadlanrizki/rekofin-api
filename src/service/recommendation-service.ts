@@ -5,6 +5,12 @@ import {
   TAddRecommendation,
   TEditRecommendation,
 } from "../types/api/recommendation";
+
+const toApiRecommendation = ({ recommendationId, ...rest }: any) => ({
+  id: recommendationId,
+  ...rest,
+});
+
 export class RecommendationService {
   static async create(request: TAddRecommendation): Promise<any> {
     const validRequest = request as unknown as TAddRecommendation;
@@ -13,7 +19,7 @@ export class RecommendationService {
       throw new ResponseError(400, `Data Conclusion is required`);
     }
 
-    return await prismaClient.recommendation.create({
+    const recommendation = await prismaClient.recommendation.create({
       data: {
         conclusionId: validRequest.conclusionId,
         title: validRequest.title,
@@ -21,6 +27,8 @@ export class RecommendationService {
         sourceId: validRequest.sourceId,
       },
     });
+
+    return toApiRecommendation(recommendation);
   }
 
   static async update(request: TEditRecommendation): Promise<any> {
@@ -28,24 +36,26 @@ export class RecommendationService {
 
     const selectedConclusion: any = await prismaClient.conclusion.findUnique({
       where: {
-        id: validRequest.conclusionId,
+        conclusionId: validRequest.conclusionId,
       },
       select: {
-        id: true,
+        conclusionId: true,
       },
     });
 
-    return await prismaClient.recommendation.update({
+    const recommendation = await prismaClient.recommendation.update({
       data: {
-        conclusionId: selectedConclusion.id,
+        conclusionId: selectedConclusion.conclusionId,
         title: validRequest.title,
         content: validRequest.content,
         sourceId: validRequest.sourceId,
       },
       where: {
-        id: validRequest.id,
+        recommendationId: validRequest.id,
       },
     });
+
+    return toApiRecommendation(recommendation);
   }
 
   static async getList(request: TGetList): Promise<any> {
@@ -65,7 +75,7 @@ export class RecommendationService {
         }
       : { isActive: true };
 
-    const data = await prismaClient.recommendation.findMany({
+    const rawData = await prismaClient.recommendation.findMany({
       skip: (page - 1) * limit,
       take: limit,
       where: searchCondition,
@@ -75,15 +85,17 @@ export class RecommendationService {
             category: true,
             description: true,
             code: true,
-          }
+          },
         },
         source: {
           select: {
             title: true,
-          }
-        }
+          },
+        },
       },
     });
+
+    const data = rawData.map(toApiRecommendation);
 
     const total = await prismaClient.recommendation.count({
       where: searchCondition,
@@ -101,54 +113,73 @@ export class RecommendationService {
 
     const selectCountRule = await prismaClient.recommendation.count({
       where: {
-        id: selectedId,
+        recommendationId: selectedId,
       },
     });
 
     if (selectCountRule === 0) {
       throw new ResponseError(
         400,
-        `Data recommendation with ID : ${id} is not found.`
+        `Data recommendation with ID : ${id} is not found.`,
       );
     }
 
-    return await prismaClient.recommendation.findUnique({
+    const recommendation: any = await prismaClient.recommendation.findUnique({
       where: {
-        id: selectedId,
+        recommendationId: selectedId,
       },
       include: {
         conclusion: {
-          select: { id: true, code: true, description: true },
+          select: { conclusionId: true, code: true, description: true },
         },
         source: {
           select: {
-            id: true
+            sourceId: true,
           },
         },
       },
     });
+
+    if (!recommendation) {
+      return null;
+    }
+
+    const { conclusionId, ...conclusionRest } = recommendation.conclusion ?? {};
+    const { sourceId, ...sourceRest } = recommendation.source ?? {};
+
+    return {
+      ...toApiRecommendation(recommendation),
+      conclusion: recommendation.conclusion
+        ? { id: conclusionId, ...conclusionRest }
+        : recommendation.conclusion,
+      source: recommendation.source
+        ? { id: sourceId, ...sourceRest }
+        : recommendation.source,
+    };
   }
   static async softDelete(id: string): Promise<any> {
     const selectedId = parseInt(id);
 
     const selectCountRule = await prismaClient.recommendation.count({
       where: {
-        id: selectedId,
+        recommendationId: selectedId,
       },
     });
 
     if (selectCountRule === 0) {
       throw new ResponseError(
         400,
-        `Data recommendation with ID : ${id} is not found.`
+        `Data recommendation with ID : ${id} is not found.`,
       );
     }
 
-    return await prismaClient.recommendation.update({
+    const recommendation = await prismaClient.recommendation.update({
       where: {
-        id: selectedId,
+        recommendationId: selectedId,
       },
       data: { isActive: false },
     });
+
+    return toApiRecommendation(recommendation);
   }
 }

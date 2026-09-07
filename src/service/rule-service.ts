@@ -9,7 +9,7 @@ export class RuleService {
 
     const facts = await prismaClient.fact.findMany({
       where: {
-        id: {
+        factId: {
           in: validRequest.conditions,
         },
       },
@@ -17,7 +17,7 @@ export class RuleService {
 
     const conclusions = await prismaClient.conclusion.findMany({
       where: {
-        id: {
+        conclusionId: {
           in: validRequest.conclusions,
         },
       },
@@ -37,6 +37,7 @@ export class RuleService {
         data: {
           name: validRequest.name,
           description: validRequest.description,
+          priority: validRequest.priority ?? 0,
           isActive: true,
           createdBy: createdBy,
         },
@@ -45,7 +46,7 @@ export class RuleService {
       // insert rule condition
       const ruleConditions = validRequest.conditions.map((id) => {
         return {
-          ruleId: rule.id,
+          ruleId: rule.ruleId,
           factId: id,
         };
       });
@@ -57,7 +58,7 @@ export class RuleService {
       // insert rule result
       const ruleResults = validRequest.conclusions.map((id) => {
         return {
-          ruleId: rule.id,
+          ruleId: rule.ruleId,
           conclusionId: id,
         };
       });
@@ -77,7 +78,7 @@ export class RuleService {
 
     const facts = await prismaClient.fact.findMany({
       where: {
-        id: {
+        factId: {
           in: validRequest.conditions,
         },
       },
@@ -85,7 +86,7 @@ export class RuleService {
 
     const conclusions = await prismaClient.conclusion.findMany({
       where: {
-        id: {
+        conclusionId: {
           in: validRequest.conclusions,
         },
       },
@@ -105,9 +106,10 @@ export class RuleService {
         data: {
           name: validRequest.name,
           description: validRequest.description,
+          priority: validRequest.priority ?? 0,
         },
         where: {
-          id: validRequest.id,
+          ruleId: validRequest.id,
         },
       });
 
@@ -128,7 +130,7 @@ export class RuleService {
       // insert rule condition
       const ruleConditions = validRequest.conditions.map((id) => {
         return {
-          ruleId: rule.id,
+          ruleId: rule.ruleId,
           factId: id,
         };
       });
@@ -140,7 +142,7 @@ export class RuleService {
       // insert rule result
       const ruleResults = validRequest.conclusions.map((id) => {
         return {
-          ruleId: rule.id,
+          ruleId: rule.ruleId,
           conclusionId: id,
         };
       });
@@ -165,13 +167,13 @@ export class RuleService {
     const searchCondition = search ? { name: { contains: search } } : {};
 
     const rules = await prismaClient.rule.findMany({
-      orderBy: { id: "desc" },
+      orderBy: { ruleId: "desc" },
       include: {
         ruleConditions: {
           include: {
             fact: {
               select: {
-                id: true,
+                factId: true,
                 code: true,
                 description: true,
               },
@@ -182,7 +184,7 @@ export class RuleService {
           include: {
             conclusion: {
               select: {
-                id: true,
+                conclusionId: true,
                 code: true,
                 category: true,
               },
@@ -196,13 +198,20 @@ export class RuleService {
     });
 
     const data = rules.map((rule) => ({
-      id: rule.id,
+      id: rule.ruleId,
       name: rule.name,
       description: rule.description,
+      priority: rule.priority,
       isActive: rule.isActive,
       createdAt: rule.createdAt,
-      conditions: rule.ruleConditions.map((rc) => rc.fact),
-      conclusions: rule.ruleResults.map((rr) => rr.conclusion),
+      conditions: rule.ruleConditions.map((rc) => {
+        const { factId, ...rest } = rc.fact;
+        return { id: factId, ...rest };
+      }),
+      conclusions: rule.ruleResults.map((rr) => {
+        const { conclusionId, ...rest } = rr.conclusion;
+        return { id: conclusionId, ...rest };
+      }),
     }));
 
     const total = await prismaClient.rule.count({
@@ -221,7 +230,7 @@ export class RuleService {
 
     const selectCountRule = await prismaClient.rule.count({
       where: {
-        id: ruleId,
+        ruleId: ruleId,
       },
     });
 
@@ -244,7 +253,7 @@ export class RuleService {
 
       await tx.rule.deleteMany({
         where: {
-          id: ruleId,
+          ruleId: ruleId,
         },
       });
     });
@@ -257,7 +266,7 @@ export class RuleService {
 
     const selectCountRule = await prismaClient.rule.count({
       where: {
-        id: ruleId,
+        ruleId: ruleId,
       },
     });
 
@@ -270,7 +279,7 @@ export class RuleService {
         isActive: false,
       },
       where: {
-        id: ruleId,
+        ruleId: ruleId,
       },
     });
   }
@@ -280,7 +289,7 @@ export class RuleService {
 
     const selectCountRule = await prismaClient.rule.count({
       where: {
-        id: selectedId,
+        ruleId: selectedId,
       },
     });
 
@@ -289,14 +298,17 @@ export class RuleService {
     }
 
     const selectedRule: any = await prismaClient.rule.findFirst({
+      where: {
+        ruleId: selectedId,
+      },
       include: {
         ruleConditions: {
           include: {
             fact: {
               select: {
-                id: true,
+                factId: true,
                 code: true,
-                description: true,
+                fact: true,
               },
             },
           },
@@ -305,7 +317,7 @@ export class RuleService {
           include: {
             conclusion: {
               select: {
-                id: true,
+                conclusionId: true,
                 code: true,
                 category: true,
               },
@@ -316,13 +328,20 @@ export class RuleService {
     });
 
     const data = {
-      id: selectedRule.id,
+      id: selectedRule.ruleId,
       name: selectedRule.name,
       description: selectedRule.description,
+      priority: selectedRule.priority,
       isActive: selectedRule.isActive,
       createdAt: selectedRule.createdAt,
-      conditions: selectedRule.ruleConditions.map((rc: any) => rc.fact),
-      conclusions: selectedRule.ruleResults.map((rr: any) => rr.conclusion),
+      conditions: selectedRule.ruleConditions.map((rc: any) => {
+        const { factId, ...rest } = rc.fact;
+        return { id: factId, ...rest };
+      }),
+      conclusions: selectedRule.ruleResults.map((rr: any) => {
+        const { conclusionId, ...rest } = rr.conclusion;
+        return { id: conclusionId, ...rest };
+      }),
     };
 
     return data;

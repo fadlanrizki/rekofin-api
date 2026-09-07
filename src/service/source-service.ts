@@ -5,6 +5,8 @@ import { TEditSource } from "../types/api/source";
 import { SourceValidation } from "../validation/source-validation";
 import { Validation } from "../validation/validation";
 
+const toApiSource = ({ sourceId, ...rest }: any) => ({ id: sourceId, ...rest });
+
 export class SourceService {
   static async create(req: any) {
     const request = Validation.validate(SourceValidation.CREATE, req.body);
@@ -13,15 +15,16 @@ export class SourceService {
       data: request as any,
     });
 
-    return source;
+    return toApiSource(source);
   }
 
   static async update(req: TEditSource) {
     const request = req as unknown as TEditSource;
+    const { id, ...data } = request;
 
     const checkSource = await prismaClient.source.findUnique({
       where: {
-        id: request.id,
+        sourceId: id,
       },
     });
 
@@ -31,12 +34,12 @@ export class SourceService {
 
     const source = await prismaClient.source.update({
       where: {
-        id: request.id,
+        sourceId: id,
       },
-      data: request as any,
+      data: data as any,
     });
 
-    return source;
+    return toApiSource(source);
   }
 
   static async delete(req: any) {
@@ -44,7 +47,7 @@ export class SourceService {
 
     const checkSource = await prismaClient.source.findUnique({
       where: {
-        id: id,
+        sourceId: id,
       },
     });
 
@@ -54,7 +57,7 @@ export class SourceService {
 
     await prismaClient.source.delete({
       where: {
-        id: id,
+        sourceId: id,
       },
     });
 
@@ -66,7 +69,7 @@ export class SourceService {
 
     const source = await prismaClient.source.findUnique({
       where: {
-        id: id,
+        sourceId: id,
       },
     });
 
@@ -74,7 +77,7 @@ export class SourceService {
       throw new ResponseError(404, "Source not found");
     }
 
-    return source;
+    return toApiSource(source);
   }
 
   static async list(req: any) {
@@ -93,7 +96,7 @@ export class SourceService {
       ];
     }
 
-    const data = await prismaClient.source.findMany({
+    const rawData = await prismaClient.source.findMany({
       where: where,
       skip: skip,
       take: take,
@@ -102,6 +105,8 @@ export class SourceService {
       },
     });
 
+    const data = rawData.map(toApiSource);
+
     const total = await prismaClient.source.count({
       where: where,
     });
@@ -109,20 +114,20 @@ export class SourceService {
     return {
       data,
       total,
-      page: Number(page)
+      page: Number(page),
     };
   }
 
   static async getOptions(req: any) {
     const data = await prismaClient.source.findMany({
       select: {
-        id: true,
+        sourceId: true,
         title: true,
       },
     });
 
     const formattedData = data.map((item) => ({
-      id: item.id,
+      id: item.sourceId,
       label: `${item.title}`,
     }));
 

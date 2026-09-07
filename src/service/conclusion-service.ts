@@ -2,32 +2,42 @@ import { prismaClient } from "../application/database";
 import { ResponseError } from "../error/response-error";
 import { TGetList } from "../types/api/common";
 import { TAddConclusion, TEditConclusion } from "../types/api/conclusion";
+
+const toApiConclusion = ({ conclusionId, ...rest }: any) => ({
+  id: conclusionId,
+  ...rest,
+});
+
 export class ConclusionService {
   static async create(request: TAddConclusion): Promise<any> {
     const validRequest = request as unknown as TAddConclusion;
 
-    return await prismaClient.conclusion.create({
+    const conclusion = await prismaClient.conclusion.create({
       data: {
         code: validRequest.code,
         category: validRequest.category,
         description: validRequest.description,
       },
     });
+
+    return toApiConclusion(conclusion);
   }
 
   static async update(request: TEditConclusion): Promise<any> {
     const validRequest = request as unknown as TEditConclusion;
 
-    return await prismaClient.conclusion.update({
+    const conclusion = await prismaClient.conclusion.update({
       data: {
         code: validRequest.code,
         category: validRequest.category,
         description: validRequest.description,
       },
       where: {
-        id: validRequest.id,
+        conclusionId: validRequest.id,
       },
     });
+
+    return toApiConclusion(conclusion);
   }
 
   static async getList(request: TGetList): Promise<any> {
@@ -47,11 +57,13 @@ export class ConclusionService {
         }
       : { isActive: true };
 
-    const data = await prismaClient.conclusion.findMany({
+    const rawData = await prismaClient.conclusion.findMany({
       skip: (page - 1) * limit,
       take: limit,
       where: searchCondition,
     });
+
+    const data = rawData.map(toApiConclusion);
 
     const total = await prismaClient.conclusion.count({
       where: searchCondition,
@@ -68,14 +80,14 @@ export class ConclusionService {
     const data = await prismaClient.conclusion.findMany({
       where: { isActive: true },
       select: {
-        id: true,
+        conclusionId: true,
         code: true,
         category: true,
       },
     });
 
     const formattedData = data.map((item) => ({
-      id: item.id,
+      id: item.conclusionId,
       label: `${item.code} - ${item.category}`,
     }));
 
@@ -87,22 +99,24 @@ export class ConclusionService {
 
     const selectCountRule = await prismaClient.conclusion.count({
       where: {
-        id: selectedId,
+        conclusionId: selectedId,
       },
     });
 
     if (selectCountRule === 0) {
       throw new ResponseError(
         400,
-        `Data kesimpulan dengan ID : ${id} tidak ditemukan.`
+        `Data kesimpulan dengan ID : ${id} tidak ditemukan.`,
       );
     }
 
-    return await prismaClient.conclusion.findUnique({
-      where: {
-        id: selectedId,
-      },
-    });
+    return await prismaClient.conclusion
+      .findUnique({
+        where: {
+          conclusionId: selectedId,
+        },
+      })
+      .then((conclusion) => conclusion && toApiConclusion(conclusion));
   }
 
   static async softDelete(id: string): Promise<any> {
@@ -110,24 +124,26 @@ export class ConclusionService {
 
     const selectCountRule = await prismaClient.conclusion.count({
       where: {
-        id: selectedId,
+        conclusionId: selectedId,
       },
     });
 
     if (selectCountRule === 0) {
       throw new ResponseError(
         400,
-        `Data conclusion with ID : ${id} is not found.`
+        `Data conclusion with ID : ${id} is not found.`,
       );
     }
 
-    return await prismaClient.conclusion.update({
+    const conclusion = await prismaClient.conclusion.update({
       where: {
-        id: selectedId,
+        conclusionId: selectedId,
       },
       data: {
         isActive: false,
       },
     });
+
+    return toApiConclusion(conclusion);
   }
 }

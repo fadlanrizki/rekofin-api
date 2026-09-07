@@ -1,245 +1,267 @@
 # Database Specification Rekofin API
 
-Dokumen ini berisi spesifikasi tabel database berdasarkan schema Prisma saat ini di [prisma/schema.prisma](../prisma/schema.prisma).
+Dokumen ini adalah spesifikasi database berdasarkan kondisi aktual Prisma schema pada `prisma/schema.prisma`.
 
-## Informasi Umum
+## Ringkasan Cepat
 
 - DB Provider: MySQL
-- ORM Schema: Prisma
-- Konvensi: nama model menggunakan PascalCase, nama tabel fisik menggunakan `@@map("...")`
-
-## Standar Panjang/Length yang Dipakai
-
-Karena Prisma schema tidak menentukan panjang untuk semua `String`, kolom `Panjang/Length` di bawah menggunakan acuan berikut:
-
-- `String` (tanpa `@db.*`): default Prisma MySQL (`VARCHAR(191)`)
-- `String @db.Text`: `TEXT` (maks 65,535 karakter)
-- `Int`: `INT` (4 byte)
-- `Boolean`: `TINYINT(1)` (1 byte)
-- `DateTime`: `DATETIME(3)`
-- `Enum`: `ENUM` sesuai daftar nilai enum
+- ORM: Prisma
+- Total tabel: 11
+- Kategori tabel:
+  - Master: 6 tabel
+  - Konjungsi (junction): 2 tabel
+  - Transaksi: 3 tabel
 
 ## Daftar Enum
 
 ### Role
 
-- `ADMIN`
-- `USER`
+- ADMIN
+- USER
 
 ### Gender
 
-- `MALE`
-- `FEMALE`
-- `UNKNOWN`
+- MALE
+- FEMALE
+- UNKNOWN
 
 ### ConsultationStatus
 
-- `IN_PROGRESS`
-- `COMPLETED`
+- IN_PROGRESS
+- COMPLETED
 
 ### SourceType
 
-- `BOOK`
-- `WEBSITE`
-- `EXPERT`
-- `JOURNAL`
-- `OTHER`
+- BOOK
+- WEBSITE
+- EXPERT
+- JOURNAL
+- OTHER
 
-## Tabel: user (Model `User`)
+## Klasifikasi Tabel
 
-| Kolom     | Tipe Prisma | Panjang/Length                   | Null | Key | Default         | Keterangan            |
-| --------- | ----------- | -------------------------------- | ---- | --- | --------------- | --------------------- |
-| id        | Int         | INT (4 byte)                     | No   | PK  | autoincrement() | Primary key           |
-| fullname  | String      | VARCHAR(191)                     | No   | -   | -               | Nama lengkap pengguna |
-| username  | String      | VARCHAR(191)                     | No   | UQ  | -               | Username unik         |
-| email     | String      | VARCHAR(191)                     | No   | UQ  | -               | Email unik            |
-| password  | String      | VARCHAR(191)                     | No   | -   | -               | Password hash         |
-| role      | Role        | ENUM (`ADMIN`,`USER`)            | No   | -   | USER            | Peran pengguna        |
-| gender    | Gender      | ENUM (`MALE`,`FEMALE`,`UNKNOWN`) | Yes  | -   | -               | Jenis kelamin         |
-| isActive  | Boolean     | TINYINT(1) (1 byte)              | No   | -   | true            | Status aktif          |
-| createdAt | DateTime    | DATETIME(3)                      | No   | -   | now()           | Waktu dibuat          |
+### 1) Tabel Master
 
-Relasi:
+Tabel master menyimpan data referensi utama sistem.
 
-- 1:N ke `consultation` melalui `consultation.userId`
-- 1:N ke `rule` melalui `rule.createdBy`
+| Tabel          | Fungsi Utama                                             |
+| -------------- | -------------------------------------------------------- |
+| user           | Menyimpan akun pengguna (admin/user)                     |
+| fact           | Menyimpan fakta/pertanyaan dasar untuk proses konsultasi |
+| conclusion     | Menyimpan kemungkinan kesimpulan hasil inferensi         |
+| recommendation | Menyimpan rekomendasi yang terkait dengan conclusion     |
+| rule           | Menyimpan aturan inferensi dan metadata pembuat          |
+| source         | Menyimpan sumber referensi rekomendasi                   |
 
-## Tabel: fact (Model `Fact`)
+### 2) Tabel Konjungsi (Junction)
 
-| Kolom       | Tipe Prisma       | Panjang/Length              | Null | Key | Default         | Keterangan                  |
-| ----------- | ----------------- | --------------------------- | ---- | --- | --------------- | --------------------------- |
-| id          | Int               | INT (4 byte)                | No   | PK  | autoincrement() | Primary key                 |
-| code        | String            | VARCHAR(191)                | No   | UQ  | -               | Kode fakta unik             |
-| description | String (@db.Text) | TEXT (maks 65,535 karakter) | No   | -   | -               | Deskripsi fakta             |
-| question    | String            | VARCHAR(191)                | No   | -   | -               | Pertanyaan untuk konsultasi |
-| createdAt   | DateTime          | DATETIME(3)                 | No   | -   | now()           | Waktu dibuat                |
-| isActive    | Boolean           | TINYINT(1) (1 byte)         | No   | -   | true            | Status aktif                |
+Tabel konjungsi menghubungkan relasi many-to-many.
 
-Relasi:
+| Tabel          | Menghubungkan       |
+| -------------- | ------------------- |
+| rule_condition | rule <-> fact       |
+| rule_result    | rule <-> conclusion |
 
-- 1:N ke `rule_condition` melalui `rule_condition.factId`
-- 1:N ke `consultation_answer` melalui `consultation_answer.factId`
+### 3) Tabel Transaksi
 
-## Tabel: conclusion (Model `Conclusion`)
+Tabel transaksi menyimpan proses konsultasi per user.
 
-| Kolom       | Tipe Prisma       | Panjang/Length              | Null | Key | Default         | Keterangan           |
-| ----------- | ----------------- | --------------------------- | ---- | --- | --------------- | -------------------- |
-| id          | Int               | INT (4 byte)                | No   | PK  | autoincrement() | Primary key          |
-| code        | String            | VARCHAR(191)                | No   | UQ  | -               | Kode kesimpulan unik |
-| description | String (@db.Text) | TEXT (maks 65,535 karakter) | No   | -   | -               | Deskripsi kesimpulan |
-| category    | String            | VARCHAR(191)                | No   | -   | -               | Kategori kesimpulan  |
-| createdAt   | DateTime          | DATETIME(3)                 | No   | -   | now()           | Waktu dibuat         |
-| isActive    | Boolean           | TINYINT(1) (1 byte)         | No   | -   | true            | Status aktif         |
+| Tabel                   | Fungsi Utama                              |
+| ----------------------- | ----------------------------------------- |
+| consultation            | Header/sesi konsultasi user               |
+| consultation_answer     | Detail jawaban fakta pada sesi konsultasi |
+| consultation_conclusion | Detail kesimpulan hasil sesi konsultasi   |
 
-Relasi:
+Catatan: Secara fungsi bisnis, `consultation_answer` dan `consultation_conclusion` adalah detail transaksi. Secara struktur relasi, keduanya juga berperan sebagai tabel junction.
 
-- 1:N ke `rule_result` melalui `rule_result.conclusionId`
-- 1:N ke `recommendation` melalui `recommendation.conclusionId`
-- 1:N ke `consultation_conclusion` melalui `consultation_conclusion.conclusionId`
+## Struktur Tabel (Ringkas)
 
-## Tabel: recommendation (Model `Recommendation`)
+### user (Model: User)
 
-| Kolom        | Tipe Prisma       | Panjang/Length              | Null | Key | Default         | Keterangan              |
-| ------------ | ----------------- | --------------------------- | ---- | --- | --------------- | ----------------------- |
-| id           | Int               | INT (4 byte)                | No   | PK  | autoincrement() | Primary key             |
-| title        | String            | VARCHAR(191)                | No   | -   | -               | Judul rekomendasi       |
-| content      | String (@db.Text) | TEXT (maks 65,535 karakter) | No   | -   | -               | Isi rekomendasi         |
-| sourceId     | Int               | INT (4 byte)                | Yes  | FK  | -               | Referensi ke sumber     |
-| createdAt    | DateTime          | DATETIME(3)                 | No   | -   | now()           | Waktu dibuat            |
-| isActive     | Boolean           | TINYINT(1) (1 byte)         | No   | -   | true            | Status aktif            |
-| conclusionId | Int               | INT (4 byte)                | No   | FK  | -               | Referensi ke kesimpulan |
+| Kolom     | Tipe     | Null | Key | Default       |
+| --------- | -------- | ---- | --- | ------------- |
+| id        | Int      | No   | PK  | autoincrement |
+| fullname  | String   | No   | -   | -             |
+| username  | String   | No   | UQ  | -             |
+| email     | String   | No   | UQ  | -             |
+| password  | String   | No   | -   | -             |
+| role      | Role     | No   | -   | USER          |
+| gender    | Gender   | Yes  | -   | -             |
+| isActive  | Boolean  | No   | -   | true          |
+| createdAt | DateTime | No   | -   | now           |
 
-Relasi:
+### fact (Model: Fact)
 
-- N:1 ke `conclusion` melalui `conclusionId`
-- N:1 ke `source` melalui `sourceId` (opsional)
+| Kolom       | Tipe              | Null | Key | Default       |
+| ----------- | ----------------- | ---- | --- | ------------- |
+| id          | Int               | No   | PK  | autoincrement |
+| code        | String            | No   | UQ  | -             |
+| description | String (@db.Text) | No   | -   | -             |
+| question    | String            | No   | -   | -             |
+| fact        | String            | No   | -   | ""            |
+| createdAt   | DateTime          | No   | -   | now           |
+| isActive    | Boolean           | No   | -   | true          |
 
-## Tabel: rule (Model `Rule`)
+### conclusion (Model: Conclusion)
 
-| Kolom       | Tipe Prisma       | Panjang/Length              | Null | Key | Default         | Keterangan        |
-| ----------- | ----------------- | --------------------------- | ---- | --- | --------------- | ----------------- |
-| id          | Int               | INT (4 byte)                | No   | PK  | autoincrement() | Primary key       |
-| name        | String            | VARCHAR(191)                | No   | -   | -               | Nama rule         |
-| description | String (@db.Text) | TEXT (maks 65,535 karakter) | No   | -   | -               | Deskripsi rule    |
-| isActive    | Boolean           | TINYINT(1) (1 byte)         | No   | -   | true            | Status aktif      |
-| createdBy   | Int               | INT (4 byte)                | No   | FK  | -               | User pembuat rule |
-| createdAt   | DateTime          | DATETIME(3)                 | No   | -   | now()           | Waktu dibuat      |
+| Kolom       | Tipe              | Null | Key | Default       |
+| ----------- | ----------------- | ---- | --- | ------------- |
+| id          | Int               | No   | PK  | autoincrement |
+| code        | String            | No   | UQ  | -             |
+| description | String (@db.Text) | No   | -   | -             |
+| category    | String            | No   | -   | -             |
+| createdAt   | DateTime          | No   | -   | now           |
+| isActive    | Boolean           | No   | -   | true          |
 
-Relasi:
+### recommendation (Model: Recommendation)
 
-- N:1 ke `user` melalui `createdBy`
-- 1:N ke `rule_condition` melalui `rule_condition.ruleId`
-- 1:N ke `rule_result` melalui `rule_result.ruleId`
+| Kolom        | Tipe              | Null | Key | Default       |
+| ------------ | ----------------- | ---- | --- | ------------- |
+| id           | Int               | No   | PK  | autoincrement |
+| title        | String            | No   | -   | -             |
+| content      | String (@db.Text) | No   | -   | -             |
+| sourceId     | Int               | Yes  | FK  | -             |
+| createdAt    | DateTime          | No   | -   | now           |
+| isActive     | Boolean           | No   | -   | true          |
+| conclusionId | Int               | No   | FK  | -             |
 
-## Tabel: rule_condition (Model `RuleCondition`)
+### rule (Model: Rule)
 
-| Kolom  | Tipe Prisma | Panjang/Length | Null | Key | Default         | Keterangan        |
-| ------ | ----------- | -------------- | ---- | --- | --------------- | ----------------- |
-| id     | Int         | INT (4 byte)   | No   | PK  | autoincrement() | Primary key       |
-| ruleId | Int         | INT (4 byte)   | No   | FK  | -               | Referensi ke rule |
-| factId | Int         | INT (4 byte)   | No   | FK  | -               | Referensi ke fact |
+| Kolom       | Tipe              | Null | Key | Default       |
+| ----------- | ----------------- | ---- | --- | ------------- |
+| id          | Int               | No   | PK  | autoincrement |
+| name        | String            | No   | -   | -             |
+| description | String (@db.Text) | No   | -   | -             |
+| isActive    | Boolean           | No   | -   | true          |
+| priority    | Int               | No   | -   | 0             |
+| createdBy   | Int               | No   | FK  | -             |
+| createdAt   | DateTime          | No   | -   | now           |
 
-Constraint:
+### source (Model: Source)
 
-- Unique gabungan: (`ruleId`, `factId`)
+| Kolom       | Tipe              | Null | Key | Default       | Catatan                 |
+| ----------- | ----------------- | ---- | --- | ------------- | ----------------------- |
+| id          | Int               | No   | PK  | autoincrement | -                       |
+| title       | String            | No   | -   | -             | -                       |
+| author      | String            | No   | -   | -             | -                       |
+| publisher   | String            | Yes  | -   | -             | -                       |
+| sourceType  | SourceType        | No   | -   | -             | mapped ke `source_type` |
+| url         | String            | Yes  | -   | -             | -                       |
+| description | String (@db.Text) | Yes  | -   | -             | -                       |
+| createdAt   | DateTime          | No   | -   | now           | mapped ke `created_at`  |
 
-Relasi:
+### rule_condition (Model: RuleCondition)
 
-- N:1 ke `rule` melalui `ruleId`
-- N:1 ke `fact` melalui `factId`
+| Kolom  | Tipe | Null | Key | Default       |
+| ------ | ---- | ---- | --- | ------------- |
+| id     | Int  | No   | PK  | autoincrement |
+| ruleId | Int  | No   | FK  | -             |
+| factId | Int  | No   | FK  | -             |
 
-## Tabel: rule_result (Model `RuleResult`)
+Constraint unik: (ruleId, factId)
 
-| Kolom        | Tipe Prisma | Panjang/Length | Null | Key | Default         | Keterangan              |
-| ------------ | ----------- | -------------- | ---- | --- | --------------- | ----------------------- |
-| id           | Int         | INT (4 byte)   | No   | PK  | autoincrement() | Primary key             |
-| ruleId       | Int         | INT (4 byte)   | No   | FK  | -               | Referensi ke rule       |
-| conclusionId | Int         | INT (4 byte)   | No   | FK  | -               | Referensi ke conclusion |
+### rule_result (Model: RuleResult)
 
-Constraint:
+| Kolom        | Tipe | Null | Key | Default       |
+| ------------ | ---- | ---- | --- | ------------- |
+| id           | Int  | No   | PK  | autoincrement |
+| ruleId       | Int  | No   | FK  | -             |
+| conclusionId | Int  | No   | FK  | -             |
 
-- Unique gabungan: (`ruleId`, `conclusionId`)
+Constraint unik: (ruleId, conclusionId)
 
-Relasi:
+### consultation (Model: Consultation)
 
-- N:1 ke `rule` melalui `ruleId`
-- N:1 ke `conclusion` melalui `conclusionId`
+| Kolom     | Tipe               | Null | Key | Default       |
+| --------- | ------------------ | ---- | --- | ------------- |
+| id        | Int                | No   | PK  | autoincrement |
+| userId    | Int                | No   | FK  | -             |
+| status    | ConsultationStatus | No   | -   | IN_PROGRESS   |
+| startedAt | DateTime           | No   | -   | now           |
+| endedAt   | DateTime           | Yes  | -   | -             |
 
-## Tabel: consultation (Model `Consultation`)
+### consultation_answer (Model: ConsultationAnswer)
 
-| Kolom     | Tipe Prisma        | Panjang/Length                   | Null | Key | Default         | Keterangan        |
-| --------- | ------------------ | -------------------------------- | ---- | --- | --------------- | ----------------- |
-| id        | Int                | INT (4 byte)                     | No   | PK  | autoincrement() | Primary key       |
-| userId    | Int                | INT (4 byte)                     | No   | FK  | -               | Referensi ke user |
-| status    | ConsultationStatus | ENUM (`IN_PROGRESS`,`COMPLETED`) | No   | -   | IN_PROGRESS     | Status konsultasi |
-| startedAt | DateTime           | DATETIME(3)                      | No   | -   | now()           | Waktu mulai       |
-| endedAt   | DateTime           | DATETIME(3)                      | Yes  | -   | -               | Waktu selesai     |
+| Kolom          | Tipe    | Null | Key | Default       |
+| -------------- | ------- | ---- | --- | ------------- |
+| id             | Int     | No   | PK  | autoincrement |
+| consultationId | Int     | No   | FK  | -             |
+| factId         | Int     | No   | FK  | -             |
+| value          | Boolean | No   | -   | -             |
 
-Relasi:
+Constraint unik: (consultationId, factId)
 
-- N:1 ke `user` melalui `userId`
-- 1:N ke `consultation_answer` melalui `consultation_answer.consultationId`
-- 1:N ke `consultation_conclusion` melalui `consultation_conclusion.consultationId`
+### consultation_conclusion (Model: ConsultationConclusion)
 
-## Tabel: consultation_answer (Model `ConsultationAnswer`)
+| Kolom          | Tipe | Null | Key | Default       |
+| -------------- | ---- | ---- | --- | ------------- |
+| id             | Int  | No   | PK  | autoincrement |
+| consultationId | Int  | No   | FK  | -             |
+| conclusionId   | Int  | No   | FK  | -             |
 
-| Kolom          | Tipe Prisma | Panjang/Length      | Null | Key | Default         | Keterangan                |
-| -------------- | ----------- | ------------------- | ---- | --- | --------------- | ------------------------- |
-| id             | Int         | INT (4 byte)        | No   | PK  | autoincrement() | Primary key               |
-| consultationId | Int         | INT (4 byte)        | No   | FK  | -               | Referensi ke consultation |
-| factId         | Int         | INT (4 byte)        | No   | FK  | -               | Referensi ke fact         |
-| value          | Boolean     | TINYINT(1) (1 byte) | No   | -   | -               | Nilai jawaban user        |
+Constraint unik: (consultationId, conclusionId)
 
-Constraint:
+## Relasi Antar Tabel
 
-- Unique gabungan: (`consultationId`, `factId`)
+### Relasi Inti
 
-Relasi:
+- user (1) -> (N) consultation
+- user (1) -> (N) rule melalui `createdBy`
+- rule (1) -> (N) rule_condition
+- fact (1) -> (N) rule_condition
+- rule (1) -> (N) rule_result
+- conclusion (1) -> (N) rule_result
+- consultation (1) -> (N) consultation_answer
+- fact (1) -> (N) consultation_answer
+- consultation (1) -> (N) consultation_conclusion
+- conclusion (1) -> (N) consultation_conclusion
+- conclusion (1) -> (N) recommendation
+- source (1) -> (N) recommendation (opsional di sisi recommendation.sourceId)
 
-- N:1 ke `consultation` melalui `consultationId`
-- N:1 ke `fact` melalui `factId`
+### Relasi Many-to-Many (melalui tabel konjungsi)
 
-## Tabel: consultation_conclusion (Model `ConsultationConclusion`)
+- rule (M) <-> (N) fact melalui rule_condition
+- rule (M) <-> (N) conclusion melalui rule_result
+- consultation (M) <-> (N) fact melalui consultation_answer
+- consultation (M) <-> (N) conclusion melalui consultation_conclusion
 
-| Kolom          | Tipe Prisma | Panjang/Length | Null | Key | Default         | Keterangan                |
-| -------------- | ----------- | -------------- | ---- | --- | --------------- | ------------------------- |
-| id             | Int         | INT (4 byte)   | No   | PK  | autoincrement() | Primary key               |
-| consultationId | Int         | INT (4 byte)   | No   | FK  | -               | Referensi ke consultation |
-| conclusionId   | Int         | INT (4 byte)   | No   | FK  | -               | Referensi ke conclusion   |
+## Peta Relasi (Mudah Dibaca)
 
-Constraint:
+```mermaid
+erDiagram
+    USER ||--o{ CONSULTATION : has
+    USER ||--o{ RULE : creates
 
-- Unique gabungan: (`consultationId`, `conclusionId`)
+    RULE ||--o{ RULE_CONDITION : has
+    FACT ||--o{ RULE_CONDITION : referenced_by
 
-Relasi:
+    RULE ||--o{ RULE_RESULT : has
+    CONCLUSION ||--o{ RULE_RESULT : referenced_by
 
-- N:1 ke `consultation` melalui `consultationId`
-- N:1 ke `conclusion` melalui `conclusionId`
+    CONSULTATION ||--o{ CONSULTATION_ANSWER : has
+    FACT ||--o{ CONSULTATION_ANSWER : answered_as
 
-## Tabel: source (Model `Source`)
+    CONSULTATION ||--o{ CONSULTATION_CONCLUSION : has
+    CONCLUSION ||--o{ CONSULTATION_CONCLUSION : selected_as
 
-| Kolom       | Tipe Prisma       | Panjang/Length                                     | Null | Key | Default         | Keterangan                                   |
-| ----------- | ----------------- | -------------------------------------------------- | ---- | --- | --------------- | -------------------------------------------- |
-| id          | Int               | INT (4 byte)                                       | No   | PK  | autoincrement() | Primary key                                  |
-| title       | String            | VARCHAR(191)                                       | No   | -   | -               | Judul sumber                                 |
-| author      | String            | VARCHAR(191)                                       | No   | -   | -               | Penulis sumber                               |
-| publisher   | String            | VARCHAR(191)                                       | Yes  | -   | -               | Penerbit                                     |
-| sourceType  | SourceType        | ENUM (`BOOK`,`WEBSITE`,`EXPERT`,`JOURNAL`,`OTHER`) | No   | -   | -               | Jenis sumber, disimpan sebagai `source_type` |
-| url         | String            | VARCHAR(191)                                       | Yes  | -   | -               | URL sumber                                   |
-| description | String (@db.Text) | TEXT (maks 65,535 karakter)                        | Yes  | -   | -               | Deskripsi sumber                             |
-| createdAt   | DateTime          | DATETIME(3)                                        | No   | -   | now()           | Waktu dibuat, disimpan sebagai `created_at`  |
+    CONCLUSION ||--o{ RECOMMENDATION : has
+    SOURCE ||--o{ RECOMMENDATION : cites
+```
 
-Relasi:
+## Ringkasan Unique Constraint
 
-- 1:N ke `recommendation` melalui `recommendation.sourceId`
+- user.username
+- user.email
+- fact.code
+- conclusion.code
+- rule_condition (ruleId, factId)
+- rule_result (ruleId, conclusionId)
+- consultation_answer (consultationId, factId)
+- consultation_conclusion (consultationId, conclusionId)
 
-## Ringkasan Constraint Unik
+## Catatan Perbaikan dari Versi Sebelumnya
 
-- `user.username` (unique)
-- `user.email` (unique)
-- `fact.code` (unique)
-- `conclusion.code` (unique)
-- `rule_condition (ruleId, factId)` (unique gabungan)
-- `rule_result (ruleId, conclusionId)` (unique gabungan)
-- `consultation_answer (consultationId, factId)` (unique gabungan)
-- `consultation_conclusion (consultationId, conclusionId)` (unique gabungan)
+- Menambahkan kolom `fact.fact` pada tabel fact.
+- Menambahkan kolom `rule.priority` pada tabel rule.
+- Merapikan klasifikasi tabel menjadi master, konjungsi, dan transaksi.
+- Menyederhanakan bagian relasi agar lebih cepat dibaca.
