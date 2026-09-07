@@ -4,7 +4,8 @@
   "description": "Backend Rekofin",
   "scripts": {
     "test": "jest",
-    "dev": "ts-node-dev --respawn --transpile-only src/main.ts"
+    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "vercel-build": "prisma-generate"
   },
   "jest": {
     "transform": {
