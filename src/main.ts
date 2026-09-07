@@ -2,16 +2,10 @@ import app from "./application/app";
 
 const PORT = process.env.PORT || 5000;
 
-app.get("/", (req, res) => {
-  res.json({
-    message: "Backend is running",
-  });
-});
-
-if (process.env.VERCEL) {
-  console.log("🚀 Backend running on Vercel Production");
-} else {
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
-    console.log(`🚀 Backend running locally on http://localhost:${PORT}`);
+    console.log(`🚀 Server running locally on http://localhost:${PORT}`);
   });
 }
+
+export default app;
