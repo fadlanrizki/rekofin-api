@@ -13,8 +13,6 @@ import userRouter from "../route/user-route";
 import dashboardRouter from "../route/dashboard-route";
 import sourceRouter from "../route/source-route";
 
-const PORT = process.env.PORT || 5000;
-
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -30,9 +28,5 @@ app.use("/api/user/consultations", userAuth, consultationRouter);
 app.use("/api", dashboardRouter);
 
 app.use(errorMiddleware);
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server ready on http://localhost:${PORT}`);
-});
 
 export default app;
