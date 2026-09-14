@@ -159,46 +159,65 @@ export class ConsultationService {
       return null;
     }
 
-    return {
-      consultationId: consultation.consultationId,
-      facts: (consultation.answers ?? []).map((answer: any) => ({
-        code: answer.fact?.code,
-        question: answer.fact?.question,
-        fact: answer.fact?.fact,
-      })),
-      conclusions: (consultation.conclusions ?? []).map((item: any) => {
-        const conclusion = item.conclusion ?? item;
+    const rawFacts = consultation.facts ?? consultation.answers ?? [];
+    const facts = rawFacts.map((answer: any) => ({
+      code: answer.fact?.code ?? answer.code,
+      question: answer.fact?.question ?? answer.question,
+      fact: answer.fact?.fact ?? answer.fact,
+    }));
 
-        return {
-          id: conclusion.conclusionId,
-          code: conclusion.code,
-          description: conclusion.description,
-          category: conclusion.category,
-          createdAt: conclusion.createdAt,
-          isActive: conclusion.isActive,
-          recommendations: (conclusion.recommendations ?? []).map(
-            (recommendation: any) => ({
-              id: recommendation.recommendationId,
-              title: recommendation.title,
-              content: recommendation.content,
-              sourceId: recommendation.sourceId,
-              createdAt: recommendation.createdAt,
-              isActive: recommendation.isActive,
-              conclusionId: recommendation.conclusionId,
-            }),
-          ),
-        };
-      }),
+    const rawConclusions = consultation.conclusions ?? [];
+    const conclusions = rawConclusions.map((item: any) => {
+      const conclusion = item.conclusion ?? item;
+
+      return {
+        id: conclusion.conclusionId ?? conclusion.id,
+        code: conclusion.code,
+        description: conclusion.description,
+        category: conclusion.category,
+        createdAt: conclusion.createdAt,
+        isActive: conclusion.isActive,
+      };
+    });
+
+    const rawRecommendations =
+      Array.isArray(consultation.recommendations) &&
+      consultation.recommendations.length > 0
+        ? consultation.recommendations
+        : rawConclusions.flatMap(
+            (item: any) => (item.conclusion ?? item).recommendations ?? [],
+          );
+
+    const recommendations = rawRecommendations.map((recommendation: any) => ({
+      id: recommendation.recommendationId ?? recommendation.id,
+      title: recommendation.title,
+      content: recommendation.content,
+      sourceId: recommendation.sourceId ?? null,
+      createdAt: recommendation.createdAt,
+      isActive: recommendation.isActive,
+      conclusionId: recommendation.conclusionId,
+    }));
+
+    return {
+      consultationId: consultation.consultationId ?? consultation.id,
+      facts,
+      conclusions,
+      recommendations,
     };
   }
 
   static buildComparisonPayload(before: any, after: any, note?: string): any {
-    const beforeConclusion = this.getComparisonConclusionCategory(before);
-    const afterConclusion = this.getComparisonConclusionCategory(after);
+    const beforeData = before
+      ? this.mapConsultationComparisonData(before)
+      : null;
+    const afterData = after ? this.mapConsultationComparisonData(after) : null;
+
+    const beforeConclusion = this.getComparisonConclusionCategory(beforeData);
+    const afterConclusion = this.getComparisonConclusionCategory(afterData);
 
     return {
-      before: before ?? null,
-      after: after ?? null,
+      before: beforeData,
+      after: afterData,
       note:
         note ??
         `Perbandingan hasil konsultasi dari ${beforeConclusion ?? "sesi sebelumnya"} ke ${afterConclusion ?? "konsultasi terbaru"}.`,
@@ -220,7 +239,13 @@ export class ConsultationService {
           include: { fact: true },
         },
         conclusions: {
-          include: { conclusion: true },
+          include: {
+            conclusion: {
+              include: {
+                recommendations: true,
+              },
+            },
+          },
         },
       },
     });
@@ -242,18 +267,24 @@ export class ConsultationService {
           include: { fact: true },
         },
         conclusions: {
-          include: { conclusion: true },
+          include: {
+            conclusion: {
+              include: {
+                recommendations: true,
+              },
+            },
+          },
         },
       },
     });
 
     const beforeData =
-      customData?.before ??
-      this.mapConsultationComparisonData(previousConsultation);
+      customData?.before !== undefined
+        ? customData.before
+        : previousConsultation;
 
     const afterData =
-      customData?.after ??
-      this.mapConsultationComparisonData(currentConsultation);
+      customData?.after !== undefined ? customData.after : currentConsultation;
 
     const comparisonPayload = this.buildComparisonPayload(
       beforeData,
@@ -492,10 +523,19 @@ export class ConsultationService {
 
     const page = Number(params.page);
     const limit = Number(params.limit);
-    // const search = params.search;
+    const search = params.search;
 
     const searchCondition = {
       userId: userId,
+      ...(search && {
+        conclusions: {
+          some: {
+            conclusion: {
+              category: { contains: search },
+            },
+          },
+        },
+      }),
     };
 
     const [total, rawConsultations] = await prismaClient.$transaction([

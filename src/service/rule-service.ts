@@ -164,7 +164,18 @@ export class RuleService {
     const limit = parseInt(validRequest.limit);
     const search = validRequest.search;
 
-    const searchCondition = search ? { name: { contains: search } } : {};
+    const searchCondition = search
+      ? {
+          OR: [
+            { name: { contains: search } },
+            {
+              ruleResults: {
+                some: { conclusion: { category: { contains: search } } },
+              },
+            },
+          ],
+        }
+      : {};
 
     const rules = await prismaClient.rule.findMany({
       orderBy: { ruleId: "desc" },
