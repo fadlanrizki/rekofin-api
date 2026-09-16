@@ -3,16 +3,47 @@ import { ResponseError } from "../error/response-error";
 import { ConsultationStatus } from "../generated/prisma";
 import { TGetList } from "../types/api/common";
 
-const mapConclusionWithRecommendations = (conclusion: any) => ({
-  ...conclusion,
-  id: conclusion.conclusionId,
-  recommendations: (conclusion.recommendations ?? []).map(
-    (recommendation: any) => ({
-      ...recommendation,
-      id: recommendation.recommendationId,
-    }),
-  ),
-});
+const mapConclusionWithRecommendations = (conclusion: any) => {
+  const { ruleResults, ...conclusionData } = conclusion;
+
+  return {
+    ...conclusionData,
+    id: conclusion.conclusionId,
+    recommendations: (conclusion.recommendations ?? []).map(
+      (recommendation: any) => ({
+        ...recommendation,
+        id: recommendation.recommendationId,
+      }),
+    ),
+  };
+};
+
+const getConclusionPriority = (conclusion: any, factIds: number[]) => {
+  const matchedRules = (conclusion.ruleResults ?? [])
+    .map((ruleResult: any) => ruleResult.rule)
+    .filter((rule: any) =>
+      (rule?.ruleConditions ?? []).every((condition: any) =>
+        factIds.includes(condition.factId),
+      ),
+    )
+    .sort((firstRule: any, secondRule: any) => {
+      if (firstRule.priority !== secondRule.priority) {
+        return firstRule.priority - secondRule.priority;
+      }
+
+      if (
+        firstRule.ruleConditions.length !== secondRule.ruleConditions.length
+      ) {
+        return (
+          secondRule.ruleConditions.length - firstRule.ruleConditions.length
+        );
+      }
+
+      return firstRule.ruleId - secondRule.ruleId;
+    });
+
+  return matchedRules[0]?.priority ?? null;
+};
 
 export class ConsultationService {
   static selectBestMatchedRule(rules: any[], factIds: number[]): number | null {
@@ -81,6 +112,7 @@ export class ConsultationService {
         factId: true,
         code: true,
         question: true,
+        isYesOrNoQuestion: true,
         description: true,
       },
       where: {
@@ -160,9 +192,14 @@ export class ConsultationService {
     }
 
     const rawFacts = consultation.facts ?? consultation.answers ?? [];
+    const factIds = rawFacts
+      .map((answer: any) => answer.factId ?? answer.fact?.factId)
+      .filter((factId: any): factId is number => typeof factId === "number");
     const facts = rawFacts.map((answer: any) => ({
       code: answer.fact?.code ?? answer.code,
       question: answer.fact?.question ?? answer.question,
+      isYesOrNoQuestion:
+        answer.fact?.isYesOrNoQuestion ?? answer.isYesOrNoQuestion,
       fact: answer.fact?.fact ?? answer.fact,
     }));
 
@@ -175,6 +212,7 @@ export class ConsultationService {
         code: conclusion.code,
         description: conclusion.description,
         category: conclusion.category,
+        priority: item.priority ?? getConclusionPriority(conclusion, factIds),
         createdAt: conclusion.createdAt,
         isActive: conclusion.isActive,
       };
@@ -203,6 +241,7 @@ export class ConsultationService {
       facts,
       conclusions,
       recommendations,
+      priority: conclusions[0]?.priority ?? null,
     };
   }
 
@@ -243,6 +282,13 @@ export class ConsultationService {
             conclusion: {
               include: {
                 recommendations: true,
+                ruleResults: {
+                  include: {
+                    rule: {
+                      include: { ruleConditions: true },
+                    },
+                  },
+                },
               },
             },
           },
@@ -271,6 +317,13 @@ export class ConsultationService {
             conclusion: {
               include: {
                 recommendations: true,
+                ruleResults: {
+                  include: {
+                    rule: {
+                      include: { ruleConditions: true },
+                    },
+                  },
+                },
               },
             },
           },
@@ -441,6 +494,13 @@ export class ConsultationService {
             conclusion: {
               include: {
                 recommendations: true,
+                ruleResults: {
+                  include: {
+                    rule: {
+                      include: { ruleConditions: true },
+                    },
+                  },
+                },
               },
             },
           },
@@ -466,9 +526,16 @@ export class ConsultationService {
         code: a.fact.code,
         fact: a.fact.fact,
       })),
-      conclusions: consultation.conclusions.map((c) =>
-        mapConclusionWithRecommendations(c.conclusion),
-      ),
+      conclusions: consultation.conclusions.map((c) => {
+        const conclusion = mapConclusionWithRecommendations(c.conclusion);
+        return {
+          ...conclusion,
+          priority: getConclusionPriority(
+            c.conclusion,
+            consultation.answers.map((answer) => answer.factId),
+          ),
+        };
+      }),
       comparison,
     };
 

@@ -14,6 +14,7 @@ export class FactService {
         code: validRequest.code,
         description: validRequest.description,
         question: validRequest.question,
+        isYesOrNoQuestion: validRequest.isYesOrNoQuestion,
         fact: validRequest.fact,
       },
     });
@@ -29,6 +30,7 @@ export class FactService {
         code: validRequest.code,
         description: validRequest.description,
         question: validRequest.question,
+        isYesOrNoQuestion: validRequest.isYesOrNoQuestion,
         fact: validRequest.fact,
       },
       where: {

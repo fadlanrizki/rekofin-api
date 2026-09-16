@@ -52,13 +52,14 @@ model User {
 }
 
 model Fact {
-  factId      Int      @id @default(autoincrement())
-  code        String   @unique
-  description String   @db.Text
-  question    String
-  fact        String   @default("")
-  createdAt   DateTime @default(now())
-  isActive    Boolean  @default(true)
+  factId             Int      @id @default(autoincrement())
+  code               String   @unique
+  description        String   @db.Text
+  question           String
+  isYesOrNoQuestion  Boolean  @default(false)
+  fact               String   @default("")
+  createdAt          DateTime @default(now())
+  isActive           Boolean  @default(true)
 
   ruleConditions      RuleCondition[]
   consultationAnswers ConsultationAnswer[]
